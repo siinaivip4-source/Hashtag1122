@@ -1,7 +1,10 @@
 streamlit
 pandas
 opencv-python-headless
-git+https://github.com/openai/CLIP.git
+ftfy
+regex
+tqdm
 torch
 torchvision
+git+https://github.com/openai/CLIP.git
 xlsxwriter
