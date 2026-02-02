@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hashtag Content Từ Ảnh - Qwen3 Local</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #050816;
+      --card: #0f172a;
+      --border: #1f2937;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.15);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --danger: #f97373;
+      --shadow: 0 18px 55px rgba(15, 23, 42, 0.85);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1d283a 0, #020617 55%, #000 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 24px;
+    }
+    .shell {
+      width: 100%;
+      max-width: 1200px;
+      background: radial-gradient(circle at top left, #1f2937 0, #020617 55%);
+      border-radius: 24px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(0, 6fr);
+      gap: 0;
+    }
+    @media (max-width: 960px) {
+      .shell {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    .panel {
+      padding: 22px 24px 24px;
+    }
+    .panel--left {
+      border-right: 1px solid rgba(31, 41, 55, 0.9);
+      background: radial-gradient(circle at top left, #020617 0, #020617 40%, #020617 100%);
+    }
+    @media (max-width: 960px) {
+      .panel--left {
+        border-right: none;
+        border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+      }
+    }
+    .panel--right {
+      background: radial-gradient(circle at top right, #020617 0, #020617 40%, #020617 100%);
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      gap: 12px;
+    }
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .title-main {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pill {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .title-sub {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .badge-stack {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .badge {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #a5f3fc 0, #22d3ee 35%, #0ea5e9 80%);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4),
+        0 0 0 4px rgba(8, 47, 73, 0.6);
+    }
+    .badge-dot--ok {
+      background: radial-gradient(circle at 30% 30%, #bbf7d0 0, #22c55e 40%, #15803d 80%);
+      box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.4),
+        0 0 0 4px rgba(5, 46, 22, 0.6);
+    }
+    .card {
+      background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.9) 0, #020617 55%);
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      padding: 16px 16px 14px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(18px);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title span {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--muted);
+    }
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text);
+      font-size: 12px;
+      padding: 6px 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.16s ease-out;
+    }
+    .btn:hover {
+      border-color: rgba(248, 250, 252, 0.9);
+      background: radial-gradient(circle at top, #111827 0, #020617 70%);
+      transform: translateY(-0.5px);
+    }
+    .btn-primary {
+      border: none;
+      background: radial-gradient(circle at 20% 0, #38bdf8 0, #0ea5e9 40%, #0369a1 80%);
+      color: #0b1220;
+      font-weight: 600;
+      padding: 7px 14px;
+      box-shadow: 0 10px 25px rgba(8, 47, 73, 0.8);
+    }
+    .btn-primary:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px) translateZ(0);
+      box-shadow: 0 16px 35px rgba(8, 47, 73, 0.95);
+    }
+    .btn-sm {
+      padding: 4px 9px;
+      font-size: 11px;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+      transform: none;
+      box-shadow: none;
+    }
+    .toggle-group {
+      display: flex;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.7);
+      border-radius: 999px;
+      padding: 2px;
+      border: 1px solid rgba(51, 65, 85, 0.9);
+    }
+    .toggle {
+      flex: 1;
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s ease-out;
+    }
+    .toggle--active {
+      background: radial-gradient(circle at 20% 0, #0ea5e9 0, #0369a1 85%);
+      color: #0b1220;
+      font-weight: 500;
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.8);
+    }
+    .field-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    .field-row label {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .field-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    input[type="number"] {
+      width: 60px;
+      padding: 4px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.7);
+      color: var(--text);
+      font-size: 12px;
+      outline: none;
+    }
+    input[type="number"]:focus {
+      border-color: rgba(56, 189, 248, 0.9);
+      box-shadow: 0 0 0 1px rgba(8, 47, 73, 0.9);
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .dropzone {
+      margin-top: 10px;
+      border-radius: 14px;
+      border: 1px dashed rgba(75, 85, 99, 0.95);
+      padding: 16px 14px;
+      background: radial-gradient(circle at top left, #020617 0, #020617 50%, #020617 100%);
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .dropzone-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 25% 15%, #38bdf8 0, #0ea5e9 40%, #0369a1 80%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0b1220;
+      font-size: 18px;
+      box-shadow: 0 12px 30px rgba(8, 47, 73, 0.95);
+      flex-shrink: 0;
+    }
+    .dropzone-copy {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .dropzone-copy b {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+    .dropzone-copy span {
+      display: block;
+      font-size: 11px;
+      margin-top: 2px;
+      color: #6b7280;
+    }
+    .hint-row {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #6b7280;
+    }
+    .hint-row span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .hint-row-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      background: rgba(15, 23, 42, 0.9);
+      color: #9ca3af;
+    }
+    .footer-row {
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #6b7280;
+    }
+    .footer-row strong {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #fecaca 0, #f87171 40%, #b91c1c 80%);
+      box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.4),
+        0 0 0 4px rgba(69, 10, 10, 0.7);
+    }
+    .status-dot--ok {
+      background: radial-gradient(circle at 30% 30%, #bbf7d0 0, #22c55e 40%, #15803d 80%);
+      box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.45),
+        0 0 0 4px rgba(5, 46, 22, 0.8);
+    }
+    .status-text {
+      max-width: 240px;
+    }
+    .status-text span {
+      color: #9ca3af;
+    }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      max-height: 460px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .item {
+      border-radius: 14px;
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      background: radial-gradient(circle at top left, #020617 0, #020617 50%, #020617 100%);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 220px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.8);
+    }
+    .item-thumb {
+      position: relative;
+      padding-top: 62%;
+      background: radial-gradient(circle at center, #1e293b 0, #020617 80%);
+      overflow: hidden;
+    }
+    .item-thumb img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .item-thumb-label {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(55, 65, 81, 0.95);
+      font-size: 10px;
+      color: #d1d5db;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      max-width: 100%;
+    }
+    .item-thumb-label span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 90px;
+    }
+    .item-thumb-pill {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      color: #9ca3af;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .item-thumb-pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #a5f3fc 0, #0ea5e9 40%, #0369a1 80%);
+    }
+    .item-body {
+      padding: 9px 10px 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+    .item-row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .item-meta {
+      font-size: 11px;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .item-meta span {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      color: #d1d5db;
+    }
+    .item-status {
+      font-size: 10px;
+      color: #9ca3af;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .item-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #fecaca 0, #f87171 40%, #b91c1c 80%);
+    }
+    .item-status-dot--ok {
+      background: radial-gradient(circle at 30% 30%, #bbf7d0 0, #22c55e 40%, #15803d 80%);
+    }
+    .item-tags {
+      font-size: 11px;
+      line-height: 1.4;
+      color: #e5e7eb;
+      max-height: 80px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+    .item-tags code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+      background: rgba(15, 23, 42, 0.55);
+      padding: 2px 5px;
+      border-radius: 999px;
+      margin: 0 3px 3px 0;
+      display: inline-block;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+    }
+    .item-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 3px;
+      font-size: 10px;
+      color: #6b7280;
+    }
+    .item-footer button {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.9);
+      color: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease-out;
+    }
+    .item-footer button:hover {
+      border-color: rgba(248, 250, 252, 0.9);
+      background: radial-gradient(circle at top, #111827 0, #020617 70%);
+      transform: translateY(-0.4px);
+    }
+    .item-footer button:disabled {
+      opacity: 0.5;
+      cursor: default;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="panel panel--left">
+      <header>
+        <div class="title">
+          <div class="title-main">
+            Hashtag từ ảnh · Qwen3 Local
+            <span class="pill">Batch uploader</span>
+          </div>
+          <div class="title-sub">
+            Upload nhiều ảnh content, tự động sinh hashtag tối ưu cho mạng xã hội.
+          </div>
+        </div>
+        <div class="badge-stack">
+          <div class="badge">
+            <span class="badge-dot badge-dot--ok"></span>
+            Qwen3 local
+          </div>
+          <div class="badge">
+            <span>FastAPI · REST</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            Cấu hình request
+            <span id="summaryText">#10 tag · tiếng Việt</span>
+          </div>
+          <div class="card-actions">
+            <button id="clearButton" class="btn btn-sm" type="button">
+              Xóa danh sách
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="field-row">
+            <label>Ngôn ngữ hashtag</label>
+            <div class="toggle-group" id="langToggle">
+              <button
+                class="toggle toggle--active"
+                type="button"
+                data-lang="vi"
+              >
+                Tiếng Việt
+              </button>
+              <button class="toggle" type="button" data-lang="en">
+                English
+              </button>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label>Số hashtag / ảnh</label>
+            <div class="field-inline">
+              <input
+                id="numTagsInput"
+                type="number"
+                min="1"
+                max="50"
+                value="10"
+              />
+              <span style="color: #6b7280;">(1–50)</span>
+            </div>
+          </div>
+
+          <div class="dropzone">
+            <div class="dropzone-icon">⇪</div>
+            <div class="dropzone-copy">
+              <b>Kéo & thả ảnh vào đây</b> hoặc
+              <label for="fileInput" style="text-decoration: underline; cursor: pointer;">chọn file thủ công</label>
+              <span>Hỗ trợ chọn nhiều ảnh cùng lúc</span>
+            </div>
+          </div>
+
+          <input
+            id="fileInput"
+            type="file"
+            multiple
+            accept="image/*"
+          />
+
+          <div class="hint-row">
+            <span>
+              Lưu ý: API phía sau là
+              <span class="hint-row-code">POST /tag-image</span>
+            </span>
+            <span id="queueHint"></span>
+          </div>
+
+          <div class="footer-row">
+            <div class="status">
+              <span id="statusDot" class="status-dot"></span>
+              <div id="statusText" class="status-text">
+                Sẵn sàng. Chưa có ảnh nào trong hàng đợi.
+              </div>
+            </div>
+            <button id="runButton" class="btn btn-primary" type="button">
+              Chạy hashtag cho ảnh đã chọn
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel panel--right">
+      <div class="card" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="card-header">
+          <div class="card-title">
+            Kết quả theo từng ảnh
+            <span id="resultSummary">0 ảnh</span>
+          </div>
+          <div class="card-actions">
+            <button id="copyAllButton" class="btn btn-sm" type="button">
+              Copy tất cả hashtag
+            </button>
+          </div>
+        </div>
+        <div id="gallery" class="gallery"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      files: [],
+      lang: "vi",
+      numTags: 10,
+      running: false,
+      completed: 0,
+      failed: 0
+    };
+
+    const fileInput = document.getElementById("fileInput");
+    const runButton = document.getElementById("runButton");
+    const clearButton = document.getElementById("clearButton");
+    const copyAllButton = document.getElementById("copyAllButton");
+    const numTagsInput = document.getElementById("numTagsInput");
+    const summaryText = document.getElementById("summaryText");
+    const resultSummary = document.getElementById("resultSummary");
+    const gallery = document.getElementById("gallery");
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+    const queueHint = document.getElementById("queueHint");
+    const langToggle = document.getElementById("langToggle");
+
+    function formatSize(bytes) {
+      if (!bytes && bytes !== 0) return "";
+      if (bytes < 1024) return bytes + "B";
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + "KB";
+      return (bytes / (1024 * 1024)).toFixed(1) + "MB";
+    }
+
+    function updateSummary() {
+      summaryText.textContent = `#${state.numTags} tag · ${state.lang === "vi" ? "tiếng Việt" : "English"}`;
+      const total = state.files.length;
+      resultSummary.textContent = `${total} ảnh · ${state.completed} xong · ${state.failed} lỗi`;
+
+      if (!total) {
+        queueHint.textContent = "";
+        statusDot.className = "status-dot";
+        statusText.innerHTML = "Sẵn sàng. Chưa có ảnh nào trong hàng đợi.";
+      } else {
+        queueHint.textContent = `Đã chọn ${total} ảnh.`;
+      }
+    }
+
+    function setRunning(running) {
+      state.running = running;
+      runButton.disabled = running || !state.files.length;
+      clearButton.disabled = running;
+      copyAllButton.disabled = running || !state.files.some(f => f.tags && f.tags.length);
+      numTagsInput.disabled = running;
+      fileInput.disabled = running;
+      Array.from(langToggle.querySelectorAll("button")).forEach(btn => {
+        btn.disabled = running;
+      });
+      if (running) {
+        statusDot.className = "status-dot status-dot--ok";
+        statusText.innerHTML = "Đang chạy hashtag cho các ảnh đã chọn...";
+      } else {
+        if (!state.files.length) {
+          statusDot.className = "status-dot";
+          statusText.innerHTML = "Sẵn sàng. Chưa có ảnh nào trong hàng đợi.";
+        } else {
+          statusDot.className = "status-dot status-dot--ok";
+          statusText.innerHTML = "Đã xử lý xong một phần hoặc toàn bộ ảnh. Bạn có thể tiếp tục thêm ảnh mới.";
+        }
+      }
+    }
+
+    function createItem(fileObj, index) {
+      const item = document.createElement("div");
+      item.className = "item";
+      item.dataset.index = index;
+
+      const thumb = document.createElement("div");
+      thumb.className = "item-thumb";
+
+      const img = document.createElement("img");
+      img.alt = fileObj.file.name;
+      img.src = fileObj.previewUrl || "";
+
+      const label = document.createElement("div");
+      label.className = "item-thumb-label";
+      label.innerHTML = `<span>${fileObj.file.name}</span>`;
+
+      const pill = document.createElement("div");
+      pill.className = "item-thumb-pill";
+      pill.innerHTML = `<span class="item-thumb-pill-dot"></span>${formatSize(fileObj.file.size)}`;
+
+      thumb.appendChild(img);
+      thumb.appendChild(label);
+      thumb.appendChild(pill);
+
+      const body = document.createElement("div");
+      body.className = "item-body";
+
+      const rowTop = document.createElement("div");
+      rowTop.className = "item-row-top";
+      rowTop.innerHTML = `
+        <div class="item-meta">
+          <span>${state.lang === "vi" ? "VI" : "EN"}</span>
+          <span>#${state.numTags}</span>
+        </div>
+        <div class="item-status">
+          <span class="item-status-dot"></span>
+          <span class="item-status-text">Chưa chạy</span>
+        </div>
+      `;
+
+      const tagsEl = document.createElement("div");
+      tagsEl.className = "item-tags";
+      tagsEl.textContent = "Hashtag sẽ xuất hiện ở đây sau khi chạy.";
+
+      const footer = document.createElement("div");
+      footer.className = "item-footer";
+      footer.innerHTML = `
+        <span class="item-footer-meta">Chưa xử lý</span>
+        <button type="button" class="item-copy-btn" disabled>Sao chép</button>
+      `;
+
+      body.appendChild(rowTop);
+      body.appendChild(tagsEl);
+      body.appendChild(footer);
+
+      item.appendChild(thumb);
+      item.appendChild(body);
+
+      return item;
+    }
+
+    function refreshGallery() {
+      gallery.innerHTML = "";
+      state.files.forEach((fileObj, index) => {
+        const item = createItem(fileObj, index);
+        gallery.appendChild(item);
+      });
+      copyAllButton.disabled = !state.files.some(f => f.tags && f.tags.length);
+    }
+
+    function addFiles(fileList) {
+      const arr = Array.from(fileList || []);
+      if (!arr.length) return;
+
+      const startIndex = state.files.length;
+      arr.forEach((file, i) => {
+        if (!file.type.startsWith("image/")) return;
+        const obj = {
+          file,
+          status: "pending",
+          tags: [],
+          error: null,
+          previewUrl: URL.createObjectURL(file),
+          lang: state.lang,
+          numTags: state.numTags
+        };
+        state.files.push(obj);
+
+        const item = createItem(obj, startIndex + i);
+        gallery.appendChild(item);
+      });
+      updateSummary();
+      runButton.disabled = !state.files.length;
+    }
+
+    async function runForFile(fileObj, index) {
+      const item = gallery.querySelector(`.item[data-index="${index}"]`);
+      if (!item) return;
+
+      const statusDot = item.querySelector(".item-status-dot");
+      const statusText = item.querySelector(".item-status-text");
+      const tagsEl = item.querySelector(".item-tags");
+      const footerMeta = item.querySelector(".item-footer-meta");
+      const copyBtn = item.querySelector(".item-copy-btn");
+
+      statusDot.className = "item-status-dot";
+      statusText.textContent = "Đang xử lý...";
+      tagsEl.textContent = "Đang gọi API...";
+      footerMeta.textContent = "Đang gọi API /tag-image";
+      copyBtn.disabled = true;
+
+      const form = new FormData();
+      form.append("file", fileObj.file);
+      form.append("num_tags", fileObj.numTags);
+      form.append("language", fileObj.lang);
+
+      let resp;
+      try {
+        resp = await fetch("/tag-image", {
+          method: "POST",
+          body: form
+        });
+      } catch (err) {
+        fileObj.status = "error";
+        fileObj.error = err;
+        statusDot.className = "item-status-dot";
+        statusText.textContent = "Lỗi kết nối";
+        tagsEl.textContent =
+          "Không kết nối được tới API. Kiểm tra server FastAPI và Qwen3 local.";
+        footerMeta.textContent = "Lỗi kết nối";
+        state.failed++;
+        return;
+      }
+
+      let data;
+      if (!resp.ok) {
+        fileObj.status = "error";
+        statusDot.className = "item-status-dot";
+        statusText.textContent = `HTTP ${resp.status}`;
+        tagsEl.textContent = "API trả về lỗi: " + (await resp.text());
+        footerMeta.textContent = `Lỗi HTTP ${resp.status}`;
+        state.failed++;
+        return;
+      }
+
+      try {
+        data = await resp.json();
+      } catch (err) {
+        fileObj.status = "error";
+        statusDot.className = "item-status-dot";
+        statusText.textContent = "Lỗi parse JSON";
+        tagsEl.textContent =
+          "Không đọc được JSON từ API. Kiểm tra cấu hình backend.";
+        footerMeta.textContent = "Lỗi JSON";
+        state.failed++;
+        return;
+      }
+
+      const tags = Array.isArray(data.tags) ? data.tags : [];
+      fileObj.status = "done";
+      fileObj.tags = tags;
+      statusDot.className = "item-status-dot item-status-dot--ok";
+      statusText.textContent = tags.length ? "Đã sinh hashtag" : "Không nhận được hashtag";
+      tagsEl.innerHTML = "";
+      if (tags.length) {
+        tags.forEach((tag) => {
+          const el = document.createElement("code");
+          el.textContent = tag;
+          tagsEl.appendChild(el);
+        });
+        footerMeta.textContent = `${tags.length} hashtag`;
+        copyBtn.disabled = false;
+        copyBtn.onclick = () => {
+          navigator.clipboard.writeText(tags.join(" ")).catch(() => {});
+        };
+      } else {
+        tagsEl.textContent = "Không có hashtag nào trong response.";
+        footerMeta.textContent = "Không có hashtag";
+        copyBtn.disabled = true;
+      }
+
+      state.completed++;
+    }
+
+    async function runAll() {
+      if (!state.files.length || state.running) return;
+      state.completed = 0;
+      state.failed = 0;
+      setRunning(true);
+
+      for (let i = 0; i < state.files.length; i++) {
+        const fileObj = state.files[i];
+        await runForFile(fileObj, i);
+        updateSummary();
+      }
+
+      setRunning(false);
+    }
+
+    function clearAll() {
+      if (state.running) return;
+      state.files.forEach((f) => {
+        if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+      });
+      state.files = [];
+      state.completed = 0;
+      state.failed = 0;
+      refreshGallery();
+      updateSummary();
+    }
+
+    function copyAllHashtags() {
+      const allTags = [];
+      state.files.forEach((f) => {
+        if (Array.isArray(f.tags) && f.tags.length) {
+          allTags.push(...f.tags);
+        }
+      });
+      if (!allTags.length) return;
+      navigator.clipboard.writeText(allTags.join(" ")).catch(() => {});
+    }
+
+    fileInput.addEventListener("change", (e) => {
+      addFiles(e.target.files);
+      e.target.value = "";
+    });
+
+    runButton.addEventListener("click", () => {
+      runAll();
+    });
+
+    clearButton.addEventListener("click", () => {
+      clearAll();
+    });
+
+    copyAllButton.addEventListener("click", () => {
+      copyAllHashtags();
+    });
+
+    numTagsInput.addEventListener("change", () => {
+      let v = parseInt(numTagsInput.value, 10);
+      if (isNaN(v) || v < 1) v = 1;
+      if (v > 50) v = 50;
+      numTagsInput.value = v;
+      state.numTags = v;
+      state.files.forEach((f) => {
+        if (f.status === "pending") {
+          f.numTags = v;
+        }
+      });
+      updateSummary();
+      refreshGallery();
+    });
+
+    langToggle.addEventListener("click", (e) => {
+      if (e.target.matches("button[data-lang]")) {
+        const lang = e.target.getAttribute("data-lang");
+        state.lang = lang;
+        Array.from(langToggle.querySelectorAll("button")).forEach((btn) => {
+          btn.classList.toggle("toggle--active", btn === e.target);
+        });
+        state.files.forEach((f) => {
+          if (f.status === "pending") {
+            f.lang = lang;
+          }
+        });
+        updateSummary();
+        refreshGallery();
+      }
+    });
+
+    updateSummary();
+  </script>
+</body>
+</html>
+
