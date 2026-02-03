@@ -1,0 +1,18 @@
+app:
+  host: "0.0.0.0"
+  port: 8000
+  reload: false
+
+model:
+  default: "vit-gpt2"
+  available:
+    vit-gpt2: "nlpconnect/vit-gpt2-image-captioning"
+    blip-base: "Salesforce/blip-image-captioning-base"
+    git-base: "microsoft/git-base"
+
+processing:
+  max_length: 32
+  num_beams: 4
+  num_return_sequences: 1
+  default_num_tags: 10
+  max_num_tags: 50
