@@ -64,7 +64,7 @@ class Config:
 
     @property
     def default_num_tags(self) -> int:
-        return self.processing.get("default_num_tags", 10)
+        return self.processing.get("default_num_tags", 5)
 
     @property
     def max_num_tags(self) -> int:

@@ -113,6 +113,7 @@ class VisionService:
             model_key = config.default_model_name
             
         instance = self.get_model_instance(model_key)
+
         image = Image.open(BytesIO(image_bytes))
         try:
             image = image.convert("RGB")

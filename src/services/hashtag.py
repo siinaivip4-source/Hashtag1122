@@ -7,7 +7,7 @@ STOPWORDS = {
 }
 
 
-def caption_to_hashtags(caption: str, num_tags: int = 10, language: str = "vi") -> List[str]:
+def caption_to_hashtags(caption: str, num_tags: int = 5, language: str = "vi") -> List[str]:
     words = re.findall(r"[A-Za-z0-9]+", caption.lower())
     filtered = [w for w in words if len(w) > 2 and w not in STOPWORDS]
 

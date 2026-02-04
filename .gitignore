@@ -1,0 +1,6 @@
+/.venv
+/.vscode
+/AGENTS.md
+/CHAT_HISTORY.md
+__pycache__
+**/__pycache__
