@@ -46,23 +46,12 @@
         </div>
 
         <div>
-          <div class="field-row">
-            <label>Ngôn ngữ hashtag</label>
-            <div class="toggle-group" id="langToggle">
-              <button class="toggle toggle--active" type="button" data-lang="vi">
-                Tiếng Việt
-              </button>
-              <button class="toggle" type="button" data-lang="en">
-                English
-              </button>
-            </div>
-          </div>
-
-          <div class="field-row">
-            <label>Số hashtag / ảnh</label>
-            <div class="field-inline">
-              <input id="numTagsInput" type="number" min="1" max="50" value="10" />
-              <span style="color: #6b7280;">(1–50)</span>
+          <div class="field-row" style="flex-direction: column; align-items: flex-start;">
+            <label style="margin-bottom: 6px;">Danh mục giới hạn (tùy chọn)</label>
+            <textarea id="customVocabInput" placeholder="Ví dụ: quần áo, thời trang, váy, đầm..."
+              style="width: 100%; height: 60px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; resize: vertical;"></textarea>
+            <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">
+              Nếu nhập, chỉ sinh hashtag nằm trong danh sách này.
             </div>
           </div>
 

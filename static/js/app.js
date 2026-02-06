@@ -1,7 +1,7 @@
 const state = {
   files: [],
   urls: [],
-  lang: "vi",
+  lang: "en",
   numTags: 10,
   model: "vit-gpt2",
   running: false,
@@ -14,8 +14,9 @@ const fileInput = document.getElementById("fileInput");
 const runButton = document.getElementById("runButton");
 const clearButton = document.getElementById("clearButton");
 const copyAllButton = document.getElementById("copyAllButton");
-const numTagsInput = document.getElementById("numTagsInput");
+// const numTagsInput = document.getElementById("numTagsInput");
 const threadsInput = document.getElementById("threadsInput");
+const customVocabInput = document.getElementById("customVocabInput");
 const modelSelect = document.getElementById("modelSelect");
 const summaryText = document.getElementById("summaryText");
 const resultSummary = document.getElementById("resultSummary");
@@ -23,7 +24,7 @@ const gallery = document.getElementById("gallery");
 const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
 const queueHint = document.getElementById("queueHint");
-const langToggle = document.getElementById("langToggle");
+// const langToggle = document.getElementById("langToggle");
 const urlInput = document.getElementById("urlInput");
 const fileModeArea = document.getElementById("fileModeArea");
 const urlModeArea = document.getElementById("urlModeArea");
@@ -47,7 +48,7 @@ function getModelDisplayName(modelKey) {
 }
 
 function updateSummary() {
-  summaryText.textContent = `#${state.numTags} tag · ${state.lang === "vi" ? "tiếng Việt" : "English"} · ${state.model}`;
+  summaryText.textContent = `#${state.numTags} tag · English · ${state.model}`;
   const total = state.files.length + state.urls.length;
   resultSummary.textContent = `${total} ảnh · ${state.completed} xong · ${state.failed} lỗi`;
 
@@ -66,16 +67,17 @@ function setRunning(running) {
   runButton.disabled = running || !hasItems;
   clearButton.disabled = running;
   copyAllButton.disabled = running || !(state.files.some(f => f.tags && f.tags.length) || state.urls.some(u => u.tags && u.tags.length));
-  numTagsInput.disabled = running;
+  // numTagsInput.disabled = running;
   threadsInput.disabled = running;
+  customVocabInput.disabled = running;
   modelSelect.disabled = running;
   fileInput.disabled = running;
   urlInput.disabled = running;
   modeFileBtn.disabled = running;
   modeUrlBtn.disabled = running;
-  Array.from(langToggle.querySelectorAll("button")).forEach(btn => {
-    btn.disabled = running;
-  });
+  // Array.from(langToggle.querySelectorAll("button")).forEach(btn => {
+  //   btn.disabled = running;
+  // });
   if (running) {
     statusDot.className = "status-dot status-dot--ok";
     statusText.innerHTML = "Đang chạy hashtag cho các ảnh đã chọn...";
@@ -125,7 +127,7 @@ function createItem(fileObj, index) {
   rowTop.className = "item-row-top";
   rowTop.innerHTML = `
     <div class="item-meta">
-      <span>${state.lang === "vi" ? "VI" : "EN"}</span>
+      <span>EN</span>
       <span>#${fileObj.numTags}</span>
       <span class="model-badge model-badge--${fileObj.model || state.model}">${modelName}</span>
     </div>
@@ -196,7 +198,7 @@ function createUrlItem(urlObj, index) {
   rowTop.className = "item-row-top";
   rowTop.innerHTML = `
     <div class="item-meta">
-      <span>${state.lang === "vi" ? "VI" : "EN"}</span>
+      <span>EN</span>
       <span>#${urlObj.numTags}</span>
       <span class="model-badge model-badge--${urlObj.model || state.model}">${modelName}</span>
     </div>
@@ -302,7 +304,7 @@ function addUrls(urlList) {
   runButton.disabled = !(state.files.length > 0 || state.urls.length > 0);
 }
 
-async function runForFile(fileObj, index) {
+async function runForFile(fileObj, index, customVocab) {
   const item = gallery.querySelector(`.item[data-index="${index}"][data-type="file"]`);
   if (!item) return;
 
@@ -324,6 +326,9 @@ async function runForFile(fileObj, index) {
   form.append("num_tags", fileObj.numTags);
   form.append("language", fileObj.lang);
   form.append("model", fileObj.model);
+  if (customVocab) {
+    form.append("custom_vocabulary", customVocab);
+  }
 
   let resp;
   try {
@@ -385,7 +390,7 @@ async function runForFile(fileObj, index) {
       navigator.clipboard.writeText(tags.join(" ")).catch(() => { });
     };
   } else {
-    tagsEl.textContent = "Không có hashtag nào trong response.";
+    tagsEl.textContent = "Không có hashtag nào (do bộ lọc whitelist?)";
     footerMeta.textContent = "Không có hashtag";
     copyBtn.disabled = true;
   }
@@ -393,7 +398,7 @@ async function runForFile(fileObj, index) {
   state.completed++;
 }
 
-async function runForUrl(urlObj, index) {
+async function runForUrl(urlObj, index, customVocab) {
   const item = gallery.querySelector(`.item[data-index="${index}"][data-type="url"]`);
   if (!item) return;
 
@@ -415,6 +420,9 @@ async function runForUrl(urlObj, index) {
   form.append("num_tags", urlObj.numTags);
   form.append("language", urlObj.lang);
   form.append("model", urlObj.model);
+  if (customVocab) {
+    form.append("custom_vocabulary", customVocab);
+  }
 
   let resp;
   try {
@@ -475,7 +483,7 @@ async function runForUrl(urlObj, index) {
       navigator.clipboard.writeText(tags.join(" ")).catch(() => { });
     };
   } else {
-    tagsEl.textContent = "Không có hashtag nào trong response.";
+    tagsEl.textContent = "Không có hashtag nào (do bộ lọc whitelist?)";
     footerMeta.textContent = "Không có hashtag";
     copyBtn.disabled = true;
   }
@@ -492,6 +500,8 @@ async function runAll() {
   setRunning(true);
 
   const concurrency = parseInt(threadsInput.value) || 1;
+  const customVocab = customVocabInput.value;
+
   const queue = [];
   state.files.forEach((fileObj, i) => queue.push({ type: "file", obj: fileObj, index: i }));
   state.urls.forEach((urlObj, i) => queue.push({ type: "url", obj: urlObj, index: i }));
@@ -501,9 +511,9 @@ async function runAll() {
       const task = queue.shift();
       try {
         if (task.type === "file") {
-          await runForFile(task.obj, task.index);
+          await runForFile(task.obj, task.index, customVocab);
         } else {
-          await runForUrl(task.obj, task.index);
+          await runForUrl(task.obj, task.index, customVocab);
         }
       } catch (e) {
         console.error("Task failed", e);
@@ -612,6 +622,7 @@ copyAllButton.addEventListener("click", () => {
   copyAllHashtags();
 });
 
+/*
 numTagsInput.addEventListener("change", () => {
   let v = parseInt(numTagsInput.value, 10);
   if (isNaN(v) || v < 1) v = 1;
@@ -631,6 +642,7 @@ numTagsInput.addEventListener("change", () => {
   updateSummary();
   refreshGallery();
 });
+*/
 
 modelSelect.addEventListener("change", () => {
   state.model = modelSelect.value;
@@ -644,6 +656,7 @@ modelSelect.addEventListener("change", () => {
   refreshGallery();
 });
 
+/*
 langToggle.addEventListener("click", (e) => {
   if (e.target.matches("button[data-lang]")) {
     const lang = e.target.getAttribute("data-lang");
@@ -665,5 +678,6 @@ langToggle.addEventListener("click", (e) => {
     refreshGallery();
   }
 });
+*/
 
 updateSummary();

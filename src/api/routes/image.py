@@ -28,9 +28,11 @@ async def tag_image(
     num_tags: Any = Form(None),
     language: str = Form("vi"),
     model: str = Form(None),
+    custom_vocabulary: str = Form(None, description="Comma-separated list of custom categories"),
 ):
 
     num_tags = parse_num_tags(num_tags, config.default_num_tags)
+    custom_keywords = [k.strip() for k in custom_vocabulary.split(",")] if custom_vocabulary else None
 
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File is not an image")
@@ -45,7 +47,7 @@ async def tag_image(
         None, # Use default executor
         partial(vision_service.generate_caption, image_bytes, model_key=model)
     )
-    tags = caption_to_hashtags(caption, num_tags=num_tags, language=language)
+    tags = caption_to_hashtags(caption, num_tags=num_tags, language=language, custom_keywords=custom_keywords)
 
     return TagResponse(tags=tags)
 
@@ -56,12 +58,18 @@ async def tag_image_from_url(
     num_tags: Any = Form(None),
     language: str = Form("vi"),
     model: str = Form(None),
+    custom_vocabulary: str = Form(None),
 ):
 
     num_tags = parse_num_tags(num_tags, config.default_num_tags)
+    custom_keywords = [k.strip() for k in custom_vocabulary.split(",")] if custom_vocabulary else None
 
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        # Add User-Agent to avoid 403 Forbidden from some sites
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        async with httpx.AsyncClient(timeout=30.0, headers=headers) as client:
             response = await client.get(url, follow_redirects=True)
             response.raise_for_status()
             content_type = response.headers.get("content-type", "")
@@ -82,7 +90,7 @@ async def tag_image_from_url(
         None,
         partial(vision_service.generate_caption, image_bytes, model_key=model)
     )
-    tags = caption_to_hashtags(caption, num_tags=num_tags, language=language)
+    tags = caption_to_hashtags(caption, num_tags=num_tags, language=language, custom_keywords=custom_keywords)
 
     return TagResponse(tags=tags)
 
@@ -94,9 +102,11 @@ async def tag_images_from_urls(
     language: str = Form("vi"),
     model: str = Form(None),
     threads: int = Form(4, ge=1, le=32, description="Number of concurrent threads"),
+    custom_vocabulary: str = Form(None),
 ):
 
     num_tags = parse_num_tags(num_tags, config.default_num_tags)
+    custom_keywords = [k.strip() for k in custom_vocabulary.split(",")] if custom_vocabulary else None
 
     if not urls:
         raise HTTPException(status_code=400, detail="No URLs provided")
@@ -108,7 +118,11 @@ async def tag_images_from_urls(
 
     async def process_url(url: str, executor: ThreadPoolExecutor):
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            # Add User-Agent to avoid 403 Forbidden from some sites
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+            async with httpx.AsyncClient(timeout=30.0, headers=headers) as client:
                 response = await client.get(url, follow_redirects=True)
                 response.raise_for_status()
                 content_type = response.headers.get("content-type", "")
@@ -124,7 +138,7 @@ async def tag_images_from_urls(
                 executor, 
                 partial(vision_service.generate_caption, image_bytes, model_key=model)
             )
-            tags = caption_to_hashtags(caption, num_tags=num_tags, language=language)
+            tags = caption_to_hashtags(caption, num_tags=num_tags, language=language, custom_keywords=custom_keywords)
 
             return {"url": url, "status": "success", "tags": tags}
         except httpx.HTTPStatusError as e:
