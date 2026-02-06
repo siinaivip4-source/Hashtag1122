@@ -1,6 +1,9 @@
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
 from typing import Annotated, List, Optional, Any
 import httpx
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 from src.services.vision import vision_service
 from src.services.hashtag import caption_to_hashtags
@@ -36,7 +39,12 @@ async def tag_image(
     if not image_bytes:
         raise HTTPException(status_code=400, detail="Empty or unreadable image")
 
-    caption = vision_service.generate_caption(image_bytes, model_key=model)
+    # Run CPU-bound task in thread pool
+    loop = asyncio.get_event_loop()
+    caption = await loop.run_in_executor(
+        None, # Use default executor
+        partial(vision_service.generate_caption, image_bytes, model_key=model)
+    )
     tags = caption_to_hashtags(caption, num_tags=num_tags, language=language)
 
     return TagResponse(tags=tags)
@@ -68,7 +76,12 @@ async def tag_image_from_url(
     if not image_bytes:
         raise HTTPException(status_code=400, detail="Empty or unreadable image")
 
-    caption = vision_service.generate_caption(image_bytes, model_key=model)
+    # Run CPU-bound task in thread pool
+    loop = asyncio.get_event_loop()
+    caption = await loop.run_in_executor(
+        None,
+        partial(vision_service.generate_caption, image_bytes, model_key=model)
+    )
     tags = caption_to_hashtags(caption, num_tags=num_tags, language=language)
 
     return TagResponse(tags=tags)
@@ -80,6 +93,7 @@ async def tag_images_from_urls(
     num_tags: Any = Form(None),
     language: str = Form("vi"),
     model: str = Form(None),
+    threads: int = Form(4, ge=1, le=32, description="Number of concurrent threads"),
 ):
 
     num_tags = parse_num_tags(num_tags, config.default_num_tags)
@@ -90,9 +104,9 @@ async def tag_images_from_urls(
     if len(urls) > 50:
         raise HTTPException(status_code=400, detail="Maximum 50 URLs per batch")
 
-    results = []
+    loop = asyncio.get_event_loop()
 
-    async def process_url(url: str):
+    async def process_url(url: str, executor: ThreadPoolExecutor):
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(url, follow_redirects=True)
@@ -105,7 +119,11 @@ async def tag_images_from_urls(
             if not image_bytes:
                 return {"url": url, "status": "error", "error": "Empty or unreadable image"}
 
-            caption = vision_service.generate_caption(image_bytes, model_key=model)
+            # Run CPU-bound task in thread pool
+            caption = await loop.run_in_executor(
+                executor, 
+                partial(vision_service.generate_caption, image_bytes, model_key=model)
+            )
             tags = caption_to_hashtags(caption, num_tags=num_tags, language=language)
 
             return {"url": url, "status": "success", "tags": tags}
@@ -116,8 +134,8 @@ async def tag_images_from_urls(
         except Exception as e:
             return {"url": url, "status": "error", "error": f"Processing error: {str(e)}"}
 
-    import asyncio
-    tasks = [process_url(url) for url in urls]
-    results = await asyncio.gather(*tasks)
+    with ThreadPoolExecutor(max_workers=threads) as executor:
+        tasks = [process_url(url, executor) for url in urls]
+        results = await asyncio.gather(*tasks)
 
     return {"results": results}

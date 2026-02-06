@@ -67,6 +67,15 @@
           </div>
 
           <div class="field-row">
+            <label>Số luồng xử lý</label>
+            <div class="field-inline">
+              <input id="threadsInput" type="number" min="1" max="10" value="2" />
+              <span style="color: #6b7280;">(1–10)</span>
+            </div>
+            <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Tăng tốc độ khi xử lý nhiều ảnh.</div>
+          </div>
+
+          <div class="field-row">
             <label>Model AI</label>
             <select id="modelSelect">
               <option value="vit-gpt2">ViT-GPT2 (Fast)</option>
@@ -93,7 +102,8 @@
           </div>
 
           <div id="urlModeArea" style="display: none;">
-            <textarea id="urlInput" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.png&#10;..."></textarea>
+            <textarea id="urlInput"
+              placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.png&#10;..."></textarea>
             <div>
               Nhập mỗi URL trên một dòng. Hỗ trợ tối đa 50 URLs.
             </div>

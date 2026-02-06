@@ -15,6 +15,7 @@ const runButton = document.getElementById("runButton");
 const clearButton = document.getElementById("clearButton");
 const copyAllButton = document.getElementById("copyAllButton");
 const numTagsInput = document.getElementById("numTagsInput");
+const threadsInput = document.getElementById("threadsInput");
 const modelSelect = document.getElementById("modelSelect");
 const summaryText = document.getElementById("summaryText");
 const resultSummary = document.getElementById("resultSummary");
@@ -66,6 +67,7 @@ function setRunning(running) {
   clearButton.disabled = running;
   copyAllButton.disabled = running || !(state.files.some(f => f.tags && f.tags.length) || state.urls.some(u => u.tags && u.tags.length));
   numTagsInput.disabled = running;
+  threadsInput.disabled = running;
   modelSelect.disabled = running;
   fileInput.disabled = running;
   urlInput.disabled = running;
@@ -80,10 +82,10 @@ function setRunning(running) {
   } else {
     if (!state.files.length && !state.urls.length) {
       statusDot.className = "status-dot";
-      statusText.innerHTML = "Sẵn sàng. Chưa có ảnh nào trong hàng đợi.";
+      statusText.innerHTML = "Sẵn sàng (Done).";
     } else {
       statusDot.className = "status-dot status-dot--ok";
-      statusText.innerHTML = "Đã xử lý xong một phần hoặc toàn bộ ảnh. Bạn có thể tiếp tục thêm ảnh mới.";
+      statusText.innerHTML = "Đã xử lý xong. Bạn có thể thêm ảnh mới.";
     }
   }
 }
@@ -489,17 +491,33 @@ async function runAll() {
   state.failed = 0;
   setRunning(true);
 
-  for (let i = 0; i < state.files.length; i++) {
-    const fileObj = state.files[i];
-    await runForFile(fileObj, i);
-    updateSummary();
+  const concurrency = parseInt(threadsInput.value) || 1;
+  const queue = [];
+  state.files.forEach((fileObj, i) => queue.push({ type: "file", obj: fileObj, index: i }));
+  state.urls.forEach((urlObj, i) => queue.push({ type: "url", obj: urlObj, index: i }));
+
+  async function worker() {
+    while (queue.length > 0 && state.running) {
+      const task = queue.shift();
+      try {
+        if (task.type === "file") {
+          await runForFile(task.obj, task.index);
+        } else {
+          await runForUrl(task.obj, task.index);
+        }
+      } catch (e) {
+        console.error("Task failed", e);
+      }
+      updateSummary();
+    }
   }
 
-  for (let i = 0; i < state.urls.length; i++) {
-    const urlObj = state.urls[i];
-    await runForUrl(urlObj, i);
-    updateSummary();
+  const promises = [];
+  for (let i = 0; i < concurrency; i++) {
+    promises.push(worker());
   }
+
+  await Promise.all(promises);
 
   setRunning(false);
 }

@@ -29,7 +29,7 @@ class VitGPT2Model(BaseModel):
     def load(self):
         if not self.model:
             print(f"Loading VitGPT2Model from {self.model_path}...")
-            self.model = VisionEncoderDecoderModel.from_pretrained(self.model_path).to(self.device)
+            self.model = VisionEncoderDecoderModel.from_pretrained(self.model_path, low_cpu_mem_usage=False).to(self.device)
             self.processor = ViTImageProcessor.from_pretrained(self.model_path)
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
 
@@ -50,7 +50,7 @@ class BlipModel(BaseModel):
         if not self.model:
             print(f"Loading BlipModel from {self.model_path}...")
             self.processor = BlipProcessor.from_pretrained(self.model_path)
-            self.model = BlipForConditionalGeneration.from_pretrained(self.model_path).to(self.device)
+            self.model = BlipForConditionalGeneration.from_pretrained(self.model_path, low_cpu_mem_usage=False).to(self.device)
 
     def generate(self, image: Image.Image) -> str:
         self.load()
@@ -65,7 +65,7 @@ class GitModel(BaseModel):
         if not self.model:
             print(f"Loading GitModel from {self.model_path}...")
             self.processor = AutoProcessor.from_pretrained(self.model_path)
-            self.model = AutoModelForCausalLM.from_pretrained(self.model_path).to(self.device)
+            self.model = AutoModelForCausalLM.from_pretrained(self.model_path, low_cpu_mem_usage=False).to(self.device)
 
     def generate(self, image: Image.Image) -> str:
         self.load()
