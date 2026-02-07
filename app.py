@@ -6,7 +6,7 @@ import torch
 import clip
 import os
 
-# --- 1. CẤU HÌNH GIAO DIỆN (CSS CHO ĐẸP NHƯ BẢN LOCAL) ---
+# --- 1. CẤU HÌNH GIAO DIỆN ---
 st.set_page_config(page_title="AI Master V8 - Visual Edit", page_icon="🔮", layout="wide")
 
 st.markdown("""
@@ -148,7 +148,7 @@ if analyze_btn and uploaded_files:
         progress.progress((i+1)/len(uploaded_files))
     
     st.session_state["results"] = temp_results
-    status.success("✅ Đã xong! Mời Sư huynh duyệt bên phải ->")
+    status.success("✅ Đã xong! Mời bạn duyệt bên phải ->")
 
 # --- 6. HIỂN THỊ GRID VIEW & EDIT (GIỐNG PHƯƠNG ÁN A) ---
 if st.session_state["results"]:
@@ -213,4 +213,5 @@ if st.session_state["results"]:
                 st.session_state["results"][i]["color"] = new_c
 
 elif not uploaded_files:
-    st.info("👈 Mời Sư huynh upload ảnh bên menu trái để bắt đầu!")
+    st.info("👈 Mời bạn upload ảnh bên menu trái để bắt đầu!")
+
