@@ -36,7 +36,7 @@ COLORS = [
     "Purple", "Brown", "Grey"
 ]
 
-# --- 3. LOAD MODEL (GIỮ NGUYÊN TRÍ TUỆ V6) ---
+# --- 3. LOAD MODEL (TRÍ TUỆ V6) ---
 @st.cache_resource
 def load_engine():
     device = "cpu" # Cloud dùng CPU
@@ -150,7 +150,7 @@ if analyze_btn and uploaded_files:
     st.session_state["results"] = temp_results
     status.success("✅ Đã xong! Mời bạn duyệt bên phải ->")
 
-# --- 6. HIỂN THỊ GRID VIEW & EDIT (GIỐNG PHƯƠNG ÁN A) ---
+# --- 6. HIỂN THỊ GRID VIEW & EDIT  ---
 if st.session_state["results"]:
     
     # Nút Xuất Excel nằm trên cùng cho tiện
@@ -214,4 +214,5 @@ if st.session_state["results"]:
 
 elif not uploaded_files:
     st.info("👈 Mời bạn upload ảnh bên menu trái để bắt đầu!")
+
 
