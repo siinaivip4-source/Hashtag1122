@@ -73,6 +73,15 @@
             </select>
           </div>
 
+          <div class="field-row">
+            <label>Chế độ xử lý</label>
+            <select id="modeSelect">
+              <option value="both">Cả 2 (Style+Color + Hashtags)</option>
+              <option value="clip">Chỉ CLIP (Style + Color)</option>
+              <option value="vision">Chỉ Vision (Caption → Hashtags)</option>
+            </select>
+          </div>
+
           <div class="input-mode-toggle">
             <button id="modeFileBtn" class="toggle toggle--active" type="button">📁 Upload ảnh</button>
             <button id="modeUrlBtn" class="toggle" type="button">🔗 Paste URL</button>
@@ -129,6 +138,12 @@
             <span id="resultSummary">0 ảnh</span>
           </div>
           <div class="card-actions">
+            <button id="exportJsonButton" class="btn btn-sm" type="button">
+              📥 JSON
+            </button>
+            <button id="exportExcelButton" class="btn btn-sm" type="button">
+              📥 Excel
+            </button>
             <button id="copyAllButton" class="btn btn-sm" type="button">
               Copy tất cả hashtag
             </button>

@@ -4,6 +4,7 @@ const state = {
   lang: "en",
   numTags: 10,
   model: "vit-gpt2",
+  mode: "both",
   running: false,
   completed: 0,
   failed: 0,
@@ -14,17 +15,18 @@ const fileInput = document.getElementById("fileInput");
 const runButton = document.getElementById("runButton");
 const clearButton = document.getElementById("clearButton");
 const copyAllButton = document.getElementById("copyAllButton");
-// const numTagsInput = document.getElementById("numTagsInput");
+const exportJsonButton = document.getElementById("exportJsonButton");
+const exportExcelButton = document.getElementById("exportExcelButton");
 const threadsInput = document.getElementById("threadsInput");
 const customVocabInput = document.getElementById("customVocabInput");
 const modelSelect = document.getElementById("modelSelect");
+const modeSelect = document.getElementById("modeSelect");
 const summaryText = document.getElementById("summaryText");
 const resultSummary = document.getElementById("resultSummary");
 const gallery = document.getElementById("gallery");
 const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
 const queueHint = document.getElementById("queueHint");
-// const langToggle = document.getElementById("langToggle");
 const urlInput = document.getElementById("urlInput");
 const fileModeArea = document.getElementById("fileModeArea");
 const urlModeArea = document.getElementById("urlModeArea");
@@ -47,8 +49,18 @@ function getModelDisplayName(modelKey) {
   return modelNames[modelKey] || modelKey;
 }
 
+function getModeDisplayName(mode) {
+  const modeNames = {
+    "both": "Cả 2",
+    "clip": "CLIP",
+    "vision": "Vision"
+  };
+  return modeNames[mode] || mode;
+}
+
 function updateSummary() {
-  summaryText.textContent = `#${state.numTags} tag · English · ${state.model}`;
+  const modeDisplay = getModeDisplayName(state.mode);
+  summaryText.textContent = `#${state.numTags} tag · ${modeDisplay} · ${state.model}`;
   const total = state.files.length + state.urls.length;
   resultSummary.textContent = `${total} ảnh · ${state.completed} xong · ${state.failed} lỗi`;
 
@@ -67,10 +79,12 @@ function setRunning(running) {
   runButton.disabled = running || !hasItems;
   clearButton.disabled = running;
   copyAllButton.disabled = running || !(state.files.some(f => f.tags && f.tags.length) || state.urls.some(u => u.tags && u.tags.length));
-  // numTagsInput.disabled = running;
+  exportJsonButton.disabled = running;
+  exportExcelButton.disabled = running;
   threadsInput.disabled = running;
   customVocabInput.disabled = running;
   modelSelect.disabled = running;
+  modeSelect.disabled = running;
   fileInput.disabled = running;
   urlInput.disabled = running;
   modeFileBtn.disabled = running;
@@ -253,11 +267,15 @@ function addFiles(fileList) {
       file,
       status: "pending",
       tags: [],
+      caption: "",
+      style: "",
+      color: "",
       error: null,
       previewUrl: URL.createObjectURL(file),
       lang: state.lang,
       numTags: state.numTags,
-      model: state.model
+      model: state.model,
+      mode: state.mode
     };
     state.files.push(obj);
 
@@ -290,10 +308,14 @@ function addUrls(urlList) {
       url,
       status: "pending",
       tags: [],
+      caption: "",
+      style: "",
+      color: "",
       error: null,
       lang: state.lang,
       numTags: state.numTags,
-      model: state.model
+      model: state.model,
+      mode: state.mode
     };
     state.urls.push(obj);
 
@@ -326,6 +348,7 @@ async function runForFile(fileObj, index, customVocab) {
   form.append("num_tags", fileObj.numTags);
   form.append("language", fileObj.lang);
   form.append("model", fileObj.model);
+  form.append("mode", fileObj.mode || state.mode);
   if (customVocab) {
     form.append("custom_vocabulary", customVocab);
   }
@@ -373,10 +396,29 @@ async function runForFile(fileObj, index, customVocab) {
   }
 
   const tags = Array.isArray(data.tags) ? data.tags : [];
+  const caption = data.caption || "";
+  const style = data.style || "";
+  const color = data.color || "";
+  
+  fileObj.caption = caption;
+  fileObj.style = style;
+  fileObj.color = color;
   fileObj.status = "done";
   fileObj.tags = tags;
   statusDot.className = "item-status-dot item-status-dot--ok";
-  statusText.textContent = tags.length ? "Đã sinh hashtag" : "Không nhận được hashtag";
+  
+  let resultHtml = "";
+  if (caption) {
+    resultHtml += `<div class="result-caption">📝 ${caption}</div>`;
+  }
+  if (style || color) {
+    const badges = [];
+    if (style) badges.push(`<span class="badge-style">🎨 ${style}</span>`);
+    if (color) badges.push(`<span class="badge-color">${color}</span>`);
+    resultHtml += `<div class="result-badges">${badges.join(" ")}</div>`;
+  }
+  
+  statusText.textContent = tags.length ? "Đã hoàn thành" : "Không nhận được hashtag";
   tagsEl.innerHTML = "";
   if (tags.length) {
     tags.forEach((tag) => {
@@ -393,6 +435,10 @@ async function runForFile(fileObj, index, customVocab) {
     tagsEl.textContent = "Không có hashtag nào (do bộ lọc whitelist?)";
     footerMeta.textContent = "Không có hashtag";
     copyBtn.disabled = true;
+  }
+  
+  if (resultHtml) {
+    tagsEl.innerHTML = resultHtml + tagsEl.innerHTML;
   }
 
   state.completed++;
@@ -420,6 +466,7 @@ async function runForUrl(urlObj, index, customVocab) {
   form.append("num_tags", urlObj.numTags);
   form.append("language", urlObj.lang);
   form.append("model", urlObj.model);
+  form.append("mode", urlObj.mode || state.mode);
   if (customVocab) {
     form.append("custom_vocabulary", customVocab);
   }
@@ -466,10 +513,29 @@ async function runForUrl(urlObj, index, customVocab) {
   }
 
   const tags = Array.isArray(data.tags) ? data.tags : [];
+  const caption = data.caption || "";
+  const style = data.style || "";
+  const color = data.color || "";
+  
+  urlObj.caption = caption;
+  urlObj.style = style;
+  urlObj.color = color;
   urlObj.status = "done";
   urlObj.tags = tags;
   statusDot.className = "item-status-dot item-status-dot--ok";
-  statusText.textContent = tags.length ? "Đã sinh hashtag" : "Không nhận được hashtag";
+  
+  let resultHtml = "";
+  if (caption) {
+    resultHtml += `<div class="result-caption">📝 ${caption}</div>`;
+  }
+  if (style || color) {
+    const badges = [];
+    if (style) badges.push(`<span class="badge-style">🎨 ${style}</span>`);
+    if (color) badges.push(`<span class="badge-color">${color}</span>`);
+    resultHtml += `<div class="result-badges">${badges.join(" ")}</div>`;
+  }
+  
+  statusText.textContent = tags.length ? "Đã hoàn thành" : "Không nhận được hashtag";
   tagsEl.innerHTML = "";
   if (tags.length) {
     tags.forEach((tag) => {
@@ -486,6 +552,10 @@ async function runForUrl(urlObj, index, customVocab) {
     tagsEl.textContent = "Không có hashtag nào (do bộ lọc whitelist?)";
     footerMeta.textContent = "Không có hashtag";
     copyBtn.disabled = true;
+  }
+  
+  if (resultHtml) {
+    tagsEl.innerHTML = resultHtml + tagsEl.innerHTML;
   }
 
   state.completed++;
@@ -562,6 +632,78 @@ function copyAllHashtags() {
   navigator.clipboard.writeText(allTags.join(" ")).catch(() => { });
 }
 
+function getExportData() {
+  const data = [];
+  let stt = 1;
+  state.files.forEach((f) => {
+    if (f.status === "done") {
+      data.push({
+        "STT": stt++,
+        "Tên file": f.file.name,
+        "Caption": f.caption || "",
+        "Style": f.style || "",
+        "Color": f.color || "",
+        "Hashtags": (f.tags || []).join(" ")
+      });
+    }
+  });
+  state.urls.forEach((u) => {
+    if (u.status === "done") {
+      data.push({
+        "STT": stt++,
+        "Tên file": u.url,
+        "Caption": u.caption || "",
+        "Style": u.style || "",
+        "Color": u.color || "",
+        "Hashtags": (u.tags || []).join(" ")
+      });
+    }
+  });
+  return data;
+}
+
+function exportToJson() {
+  const data = getExportData();
+  if (!data.length) return;
+  
+  const jsonStr = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "hashtags_export.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportToExcel() {
+  const data = getExportData();
+  if (!data.length) return;
+  
+  const headers = ["STT", "Tên file", "Caption", "Style", "Color", "Hashtags"];
+  let csv = headers.join(",") + "\n";
+  
+  data.forEach(row => {
+    const values = [
+      row["STT"],
+      `"${(row["Tên file"] || "").replace(/"/g, '""')}"`,
+      `"${(row["Caption"] || "").replace(/"/g, '""')}"`,
+      `"${(row["Style"] || "").replace(/"/g, '""')}"`,
+      `"${(row["Color"] || "").replace(/"/g, '""')}"`,
+      `"${(row["Hashtags"] || "").replace(/"/g, '""')}"`
+    ];
+    csv += values.join(",") + "\n";
+  });
+  
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "hashtags_export.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 fileInput.addEventListener("change", (e) => {
   addFiles(e.target.files);
   e.target.value = "";
@@ -622,6 +764,14 @@ copyAllButton.addEventListener("click", () => {
   copyAllHashtags();
 });
 
+exportJsonButton.addEventListener("click", () => {
+  exportToJson();
+});
+
+exportExcelButton.addEventListener("click", () => {
+  exportToExcel();
+});
+
 /*
 numTagsInput.addEventListener("change", () => {
   let v = parseInt(numTagsInput.value, 10);
@@ -651,6 +801,18 @@ modelSelect.addEventListener("change", () => {
   });
   state.urls.forEach((u) => {
     u.model = state.model;
+  });
+  updateSummary();
+  refreshGallery();
+});
+
+modeSelect.addEventListener("change", () => {
+  state.mode = modeSelect.value;
+  state.files.forEach((f) => {
+    f.mode = state.mode;
+  });
+  state.urls.forEach((u) => {
+    u.mode = state.mode;
   });
   updateSummary();
   refreshGallery();
