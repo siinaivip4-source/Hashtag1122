@@ -14,4 +14,8 @@ class HealthResponse(BaseModel):
 
 
 class TagResponse(BaseModel):
-    tags: List[str]
+    tags: List[str] = []
+    caption: str = ""
+    style: str = ""
+    color: str = ""
+    clip_hashtags: List[str] = []

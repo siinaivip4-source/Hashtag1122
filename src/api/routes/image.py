@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 from src.services.vision import vision_service
+from src.services.clip import clip_service
 from src.services.hashtag import caption_to_hashtags
 from src.core.config import config
 from src.schemas.response import TagResponse
@@ -29,6 +30,7 @@ async def tag_image(
     language: str = Form("vi"),
     model: str = Form(None),
     custom_vocabulary: str = Form(None, description="Comma-separated list of custom categories"),
+    mode: str = Form("both", description="Mode: clip, vision, or both"),
 ):
 
     num_tags = parse_num_tags(num_tags, config.default_num_tags)
@@ -41,15 +43,28 @@ async def tag_image(
     if not image_bytes:
         raise HTTPException(status_code=400, detail="Empty or unreadable image")
 
-    # Run CPU-bound task in thread pool
-    loop = asyncio.get_event_loop()
-    caption = await loop.run_in_executor(
-        None, # Use default executor
-        partial(vision_service.generate_caption, image_bytes, model_key=model)
-    )
-    tags = caption_to_hashtags(caption, num_tags=num_tags, language=language, custom_keywords=custom_keywords)
+    caption = ""
+    tags = []
+    style = ""
+    color = ""
+    clip_hashtags = []
 
-    return TagResponse(tags=tags)
+    loop = asyncio.get_event_loop()
+
+    if mode in ("vision", "both"):
+        caption = await loop.run_in_executor(
+            None,
+            partial(vision_service.generate_caption, image_bytes, model_key=model)
+        )
+        tags = caption_to_hashtags(caption, num_tags=num_tags, language=language, custom_keywords=custom_keywords)
+
+    if mode in ("clip", "both"):
+        style, color, clip_hashtags = await loop.run_in_executor(
+            None,
+            partial(clip_service.predict, image_bytes, num_tags=num_tags)
+        )
+
+    return TagResponse(tags=tags, caption=caption, style=style, color=color, clip_hashtags=clip_hashtags)
 
 
 @router.post("/url", response_model=TagResponse)
@@ -59,13 +74,13 @@ async def tag_image_from_url(
     language: str = Form("vi"),
     model: str = Form(None),
     custom_vocabulary: str = Form(None),
+    mode: str = Form("both", description="Mode: clip, vision, or both"),
 ):
 
     num_tags = parse_num_tags(num_tags, config.default_num_tags)
     custom_keywords = [k.strip() for k in custom_vocabulary.split(",")] if custom_vocabulary else None
 
     try:
-        # Add User-Agent to avoid 403 Forbidden from some sites
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
@@ -84,15 +99,28 @@ async def tag_image_from_url(
     if not image_bytes:
         raise HTTPException(status_code=400, detail="Empty or unreadable image")
 
-    # Run CPU-bound task in thread pool
-    loop = asyncio.get_event_loop()
-    caption = await loop.run_in_executor(
-        None,
-        partial(vision_service.generate_caption, image_bytes, model_key=model)
-    )
-    tags = caption_to_hashtags(caption, num_tags=num_tags, language=language, custom_keywords=custom_keywords)
+    caption = ""
+    tags = []
+    style = ""
+    color = ""
+    clip_hashtags = []
 
-    return TagResponse(tags=tags)
+    loop = asyncio.get_event_loop()
+
+    if mode in ("vision", "both"):
+        caption = await loop.run_in_executor(
+            None,
+            partial(vision_service.generate_caption, image_bytes, model_key=model)
+        )
+        tags = caption_to_hashtags(caption, num_tags=num_tags, language=language, custom_keywords=custom_keywords)
+
+    if mode in ("clip", "both"):
+        style, color, clip_hashtags = await loop.run_in_executor(
+            None,
+            partial(clip_service.predict, image_bytes, num_tags=num_tags)
+        )
+
+    return TagResponse(tags=tags, caption=caption, style=style, color=color, clip_hashtags=clip_hashtags)
 
 
 @router.post("/urls-batch")
@@ -103,6 +131,7 @@ async def tag_images_from_urls(
     model: str = Form(None),
     threads: int = Form(4, ge=1, le=32, description="Number of concurrent threads"),
     custom_vocabulary: str = Form(None),
+    mode: str = Form("both", description="Mode: clip, vision, or both"),
 ):
 
     num_tags = parse_num_tags(num_tags, config.default_num_tags)
@@ -118,7 +147,6 @@ async def tag_images_from_urls(
 
     async def process_url(url: str, executor: ThreadPoolExecutor):
         try:
-            # Add User-Agent to avoid 403 Forbidden from some sites
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             }
@@ -133,14 +161,26 @@ async def tag_images_from_urls(
             if not image_bytes:
                 return {"url": url, "status": "error", "error": "Empty or unreadable image"}
 
-            # Run CPU-bound task in thread pool
-            caption = await loop.run_in_executor(
-                executor, 
-                partial(vision_service.generate_caption, image_bytes, model_key=model)
-            )
-            tags = caption_to_hashtags(caption, num_tags=num_tags, language=language, custom_keywords=custom_keywords)
+            caption = ""
+            tags = []
+            style = ""
+            color = ""
+            clip_hashtags = []
 
-            return {"url": url, "status": "success", "tags": tags}
+            if mode in ("vision", "both"):
+                caption = await loop.run_in_executor(
+                    executor,
+                    partial(vision_service.generate_caption, image_bytes, model_key=model)
+                )
+                tags = caption_to_hashtags(caption, num_tags=num_tags, language=language, custom_keywords=custom_keywords)
+
+            if mode in ("clip", "both"):
+                style, color, clip_hashtags = await loop.run_in_executor(
+                    executor,
+                    partial(clip_service.predict, image_bytes, num_tags=num_tags)
+                )
+
+            return {"url": url, "status": "success", "tags": tags, "caption": caption, "style": style, "color": color, "clip_hashtags": clip_hashtags}
         except httpx.HTTPStatusError as e:
             return {"url": url, "status": "error", "error": f"HTTP {e.response.status_code}"}
         except httpx.RequestError as e:
