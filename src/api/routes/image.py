@@ -14,6 +14,30 @@ from src.schemas.response import TagResponse
 router = APIRouter(prefix="/tag-image", tags=["image"])
 
 
+def _process_image_bytes(image_bytes: bytes, model_key: str, num_tags: int,
+                        custom_keywords: list, mode: str) -> dict:
+    caption = ""
+    tags = []
+    style = ""
+    color = ""
+    clip_hashtags = []
+
+    if mode in ("vision", "both"):
+        caption = vision_service.generate_caption(image_bytes, model_key=model_key)
+        tags = caption_to_hashtags(caption, num_tags=num_tags, custom_keywords=custom_keywords)
+
+    if mode in ("clip", "both"):
+        style, color, clip_hashtags = clip_service.predict(image_bytes, num_tags=num_tags)
+
+    return {
+        "caption": caption,
+        "tags": tags,
+        "style": style,
+        "color": color,
+        "clip_hashtags": clip_hashtags
+    }
+
+
 def parse_num_tags(value: Any, default: int) -> int:
     if value is None:
         return default
@@ -27,7 +51,6 @@ def parse_num_tags(value: Any, default: int) -> int:
 async def tag_image(
     file: Annotated[UploadFile, File(description="Image to analyze")],
     num_tags: Any = Form(None),
-    language: str = Form("vi"),
     model: str = Form(None),
     custom_vocabulary: str = Form(None, description="Comma-separated list of custom categories"),
     mode: str = Form("both", description="Mode: clip, vision, or both"),
@@ -43,35 +66,25 @@ async def tag_image(
     if not image_bytes:
         raise HTTPException(status_code=400, detail="Empty or unreadable image")
 
-    caption = ""
-    tags = []
-    style = ""
-    color = ""
-    clip_hashtags = []
-
     loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(
+        None,
+        partial(_process_image_bytes, image_bytes, model, num_tags, custom_keywords, mode)
+    )
 
-    if mode in ("vision", "both"):
-        caption = await loop.run_in_executor(
-            None,
-            partial(vision_service.generate_caption, image_bytes, model_key=model)
-        )
-        tags = caption_to_hashtags(caption, num_tags=num_tags, language=language, custom_keywords=custom_keywords)
-
-    if mode in ("clip", "both"):
-        style, color, clip_hashtags = await loop.run_in_executor(
-            None,
-            partial(clip_service.predict, image_bytes, num_tags=num_tags)
-        )
-
-    return TagResponse(tags=tags, caption=caption, style=style, color=color, clip_hashtags=clip_hashtags)
+    return TagResponse(
+        tags=result["tags"],
+        caption=result["caption"],
+        style=result["style"],
+        color=result["color"],
+        clip_hashtags=result["clip_hashtags"]
+    )
 
 
 @router.post("/url", response_model=TagResponse)
 async def tag_image_from_url(
     url: Annotated[str, Form(description="Image URL to analyze")],
     num_tags: Any = Form(None),
-    language: str = Form("vi"),
     model: str = Form(None),
     custom_vocabulary: str = Form(None),
     mode: str = Form("both", description="Mode: clip, vision, or both"),
@@ -99,35 +112,25 @@ async def tag_image_from_url(
     if not image_bytes:
         raise HTTPException(status_code=400, detail="Empty or unreadable image")
 
-    caption = ""
-    tags = []
-    style = ""
-    color = ""
-    clip_hashtags = []
-
     loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(
+        None,
+        partial(_process_image_bytes, image_bytes, model, num_tags, custom_keywords, mode)
+    )
 
-    if mode in ("vision", "both"):
-        caption = await loop.run_in_executor(
-            None,
-            partial(vision_service.generate_caption, image_bytes, model_key=model)
-        )
-        tags = caption_to_hashtags(caption, num_tags=num_tags, language=language, custom_keywords=custom_keywords)
-
-    if mode in ("clip", "both"):
-        style, color, clip_hashtags = await loop.run_in_executor(
-            None,
-            partial(clip_service.predict, image_bytes, num_tags=num_tags)
-        )
-
-    return TagResponse(tags=tags, caption=caption, style=style, color=color, clip_hashtags=clip_hashtags)
+    return TagResponse(
+        tags=result["tags"],
+        caption=result["caption"],
+        style=result["style"],
+        color=result["color"],
+        clip_hashtags=result["clip_hashtags"]
+    )
 
 
 @router.post("/urls-batch")
 async def tag_images_from_urls(
     urls: Annotated[List[str], Form(description="List of image URLs to analyze")],
     num_tags: Any = Form(None),
-    language: str = Form("vi"),
     model: str = Form(None),
     threads: int = Form(4, ge=1, le=32, description="Number of concurrent threads"),
     custom_vocabulary: str = Form(None),
@@ -161,26 +164,20 @@ async def tag_images_from_urls(
             if not image_bytes:
                 return {"url": url, "status": "error", "error": "Empty or unreadable image"}
 
-            caption = ""
-            tags = []
-            style = ""
-            color = ""
-            clip_hashtags = []
+            result = await loop.run_in_executor(
+                executor,
+                partial(_process_image_bytes, image_bytes, model, num_tags, custom_keywords, mode)
+            )
 
-            if mode in ("vision", "both"):
-                caption = await loop.run_in_executor(
-                    executor,
-                    partial(vision_service.generate_caption, image_bytes, model_key=model)
-                )
-                tags = caption_to_hashtags(caption, num_tags=num_tags, language=language, custom_keywords=custom_keywords)
-
-            if mode in ("clip", "both"):
-                style, color, clip_hashtags = await loop.run_in_executor(
-                    executor,
-                    partial(clip_service.predict, image_bytes, num_tags=num_tags)
-                )
-
-            return {"url": url, "status": "success", "tags": tags, "caption": caption, "style": style, "color": color, "clip_hashtags": clip_hashtags}
+            return {
+                "url": url,
+                "status": "success",
+                "tags": result["tags"],
+                "caption": result["caption"],
+                "style": result["style"],
+                "color": result["color"],
+                "clip_hashtags": result["clip_hashtags"]
+            }
         except httpx.HTTPStatusError as e:
             return {"url": url, "status": "error", "error": f"HTTP {e.response.status_code}"}
         except httpx.RequestError as e:

@@ -105,8 +105,8 @@ class VisionService:
         return instance
 
     def load(self):
-        # Preload default model
-        self.get_model_instance(config.default_model_name).load()
+        for model_key in config.available_models.keys():
+            self.get_model_instance(model_key).load()
 
     def generate_caption(self, image_bytes: bytes, model_key: str = None) -> str:
         if not model_key:

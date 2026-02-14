@@ -7,7 +7,7 @@ STOPWORDS = {
 }
 
 
-def caption_to_hashtags(caption: str, num_tags: int = 5, language: str = "vi", custom_keywords: List[str] = None) -> List[str]:
+def caption_to_hashtags(caption: str, num_tags: int = 5, custom_keywords: List[str] = None) -> List[str]:
     # Check if custom keywords are provided
     if custom_keywords:
         # Normalize caption and keywords for matching
