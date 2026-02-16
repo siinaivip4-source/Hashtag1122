@@ -1,10 +1,12 @@
 streamlit
 pandas
-opencv-python-headless
+Pillow
+xlsxwriter
 ftfy
 regex
 tqdm
-torch
-torchvision
-git+https://github.com/openai/CLIP.git
-xlsxwriter
+torch>=2.0.0
+torchvision>=0.15.0
+setuptools>=65.0
+wheel
+open-clip-torch
