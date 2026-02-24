@@ -116,7 +116,11 @@ class ClipService:
         s_idx = s_probs.argmax().item()
         c_idx = c_probs.argmax().item()
         
-        top_h_indices = h_probs.topk(num_tags).indices.tolist()
+        top_h_indices = h_probs.topk(num_tags).indices
+        # topk returns shape (1, k) for a single image; convert to a flat Python list
+        if top_h_indices.dim() > 1:
+            top_h_indices = top_h_indices[0]
+        top_h_indices = top_h_indices.tolist()
         hashtags = [f"#{HASHTAGS[i]}" for i in top_h_indices]
         
         image.close()
