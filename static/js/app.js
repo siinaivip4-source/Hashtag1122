@@ -73,7 +73,7 @@ function updateSummary() {
   }
 }
 
-function setRunning(running) {
+function setRunning(running, finishedMessage = null) {
   state.running = running;
   const hasItems = state.files.length > 0 || state.urls.length > 0;
   runButton.disabled = running || !hasItems;
@@ -89,9 +89,7 @@ function setRunning(running) {
   urlInput.disabled = running;
   modeFileBtn.disabled = running;
   modeUrlBtn.disabled = running;
-  // Array.from(langToggle.querySelectorAll("button")).forEach(btn => {
-  //   btn.disabled = running;
-  // });
+
   if (running) {
     statusDot.className = "status-dot status-dot--ok";
     statusText.innerHTML = "Đang chạy hashtag cho các ảnh đã chọn...";
@@ -101,7 +99,7 @@ function setRunning(running) {
       statusText.innerHTML = "Sẵn sàng (Done).";
     } else {
       statusDot.className = "status-dot status-dot--ok";
-      statusText.innerHTML = "Đã xử lý xong. Bạn có thể thêm ảnh mới.";
+      statusText.innerHTML = finishedMessage || "Đã xử lý xong. Bạn có thể thêm ảnh mới.";
     }
   }
 }
@@ -399,14 +397,14 @@ async function runForFile(fileObj, index, customVocab) {
   const caption = data.caption || "";
   const style = data.style || "";
   const color = data.color || "";
-  
+
   fileObj.caption = caption;
   fileObj.style = style;
   fileObj.color = color;
   fileObj.status = "done";
   fileObj.tags = tags;
   statusDot.className = "item-status-dot item-status-dot--ok";
-  
+
   let resultHtml = "";
   if (caption) {
     resultHtml += `<div class="result-caption">📝 ${caption}</div>`;
@@ -417,28 +415,36 @@ async function runForFile(fileObj, index, customVocab) {
     if (color) badges.push(`<span class="badge-color">${color}</span>`);
     resultHtml += `<div class="result-badges">${badges.join(" ")}</div>`;
   }
-  
+
   statusText.textContent = tags.length ? "Đã hoàn thành" : "Không nhận được hashtag";
   tagsEl.innerHTML = "";
+
+  if (resultHtml) {
+    tagsEl.innerHTML = resultHtml;
+  }
+
   if (tags.length) {
+    const tagsContainer = document.createElement("div");
+    tagsContainer.className = "tags-list-container";
     tags.forEach((tag) => {
       const el = document.createElement("code");
       el.textContent = tag;
-      tagsEl.appendChild(el);
+      tagsContainer.appendChild(el);
     });
+    tagsEl.appendChild(tagsContainer);
+
     footerMeta.textContent = `${tags.length} hashtag`;
     copyBtn.disabled = false;
     copyBtn.onclick = () => {
       navigator.clipboard.writeText(tags.join(" ")).catch(() => { });
     };
   } else {
-    tagsEl.textContent = "Không có hashtag nào (do bộ lọc whitelist?)";
+    const noTagsMsg = document.createElement("div");
+    noTagsMsg.textContent = "Không có hashtag nào (do bộ lọc whitelist?)";
+    tagsEl.appendChild(noTagsMsg);
+
     footerMeta.textContent = "Không có hashtag";
     copyBtn.disabled = true;
-  }
-  
-  if (resultHtml) {
-    tagsEl.innerHTML = resultHtml + tagsEl.innerHTML;
   }
 
   state.completed++;
@@ -516,14 +522,14 @@ async function runForUrl(urlObj, index, customVocab) {
   const caption = data.caption || "";
   const style = data.style || "";
   const color = data.color || "";
-  
+
   urlObj.caption = caption;
   urlObj.style = style;
   urlObj.color = color;
   urlObj.status = "done";
   urlObj.tags = tags;
   statusDot.className = "item-status-dot item-status-dot--ok";
-  
+
   let resultHtml = "";
   if (caption) {
     resultHtml += `<div class="result-caption">📝 ${caption}</div>`;
@@ -534,28 +540,36 @@ async function runForUrl(urlObj, index, customVocab) {
     if (color) badges.push(`<span class="badge-color">${color}</span>`);
     resultHtml += `<div class="result-badges">${badges.join(" ")}</div>`;
   }
-  
+
   statusText.textContent = tags.length ? "Đã hoàn thành" : "Không nhận được hashtag";
   tagsEl.innerHTML = "";
+
+  if (resultHtml) {
+    tagsEl.innerHTML = resultHtml;
+  }
+
   if (tags.length) {
+    const tagsContainer = document.createElement("div");
+    tagsContainer.className = "tags-list-container";
     tags.forEach((tag) => {
       const el = document.createElement("code");
       el.textContent = tag;
-      tagsEl.appendChild(el);
+      tagsContainer.appendChild(el);
     });
+    tagsEl.appendChild(tagsContainer);
+
     footerMeta.textContent = `${tags.length} hashtag`;
     copyBtn.disabled = false;
     copyBtn.onclick = () => {
       navigator.clipboard.writeText(tags.join(" ")).catch(() => { });
     };
   } else {
-    tagsEl.textContent = "Không có hashtag nào (do bộ lọc whitelist?)";
+    const noTagsMsg = document.createElement("div");
+    noTagsMsg.textContent = "Không có hashtag nào (do bộ lọc whitelist?)";
+    tagsEl.appendChild(noTagsMsg);
+
     footerMeta.textContent = "Không có hashtag";
     copyBtn.disabled = true;
-  }
-  
-  if (resultHtml) {
-    tagsEl.innerHTML = resultHtml + tagsEl.innerHTML;
   }
 
   state.completed++;
@@ -592,6 +606,8 @@ async function runAll() {
     }
   }
 
+  const startTime = Date.now();
+
   const promises = [];
   for (let i = 0; i < concurrency; i++) {
     promises.push(worker());
@@ -599,7 +615,8 @@ async function runAll() {
 
   await Promise.all(promises);
 
-  setRunning(false);
+  const durationStr = ((Date.now() - startTime) / 1000).toFixed(2);
+  setRunning(false, `Đã xử lý xong toàn bộ trong <b>${durationStr}s</b>. Bạn có thể thêm ảnh mới.`);
 }
 
 function clearAll() {
@@ -665,7 +682,7 @@ function getExportData() {
 function exportToJson() {
   const data = getExportData();
   if (!data.length) return;
-  
+
   const jsonStr = JSON.stringify(data, null, 2);
   const blob = new Blob([jsonStr], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -679,10 +696,10 @@ function exportToJson() {
 function exportToExcel() {
   const data = getExportData();
   if (!data.length) return;
-  
+
   const headers = ["STT", "Tên file", "Caption", "Style", "Color", "Hashtags"];
   let csv = headers.join(",") + "\n";
-  
+
   data.forEach(row => {
     const values = [
       row["STT"],
@@ -694,7 +711,7 @@ function exportToExcel() {
     ];
     csv += values.join(",") + "\n";
   });
-  
+
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

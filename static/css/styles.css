@@ -30,15 +30,15 @@ body {
 }
 
 .shell {
-  width: 100%;
-  max-width: 1200px;
+  width: 98%;
+  max-width: 1800px;
   background: radial-gradient(circle at top left, #1f2937 0, #020617 55%);
   border-radius: 24px;
   border: 1px solid rgba(148, 163, 184, 0.25);
   box-shadow: var(--shadow);
   overflow: hidden;
   display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 6fr);
+  grid-template-columns: 460px 1fr;
   gap: 0;
 }
 
@@ -421,11 +421,13 @@ input[type="file"] {
 
 .gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
-  max-height: 460px;
-  overflow: auto;
-  padding-right: 4px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  min-height: 520px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  padding-right: 8px;
+  align-content: start;
 }
 
 .item {
@@ -435,13 +437,14 @@ input[type="file"] {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 220px;
+  min-height: 250px;
+  height: max-content;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.8);
 }
 
 .item-thumb {
   position: relative;
-  padding-top: 62%;
+  padding-top: 56%;
   background: radial-gradient(circle at center, #1e293b 0, #020617 80%);
   overflow: hidden;
 }
@@ -458,38 +461,38 @@ input[type="file"] {
   position: absolute;
   left: 8px;
   top: 8px;
-  padding: 2px 7px;
+  padding: 4px 10px;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(55, 65, 81, 0.95);
-  font-size: 10px;
+  font-size: 11px;
   color: #d1d5db;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  max-width: 100%;
+  max-width: calc(100% - 70px);
 }
 
 .item-thumb-label span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 90px;
+  max-width: 150px;
 }
 
 .item-thumb-pill {
   position: absolute;
   right: 8px;
   top: 8px;
-  padding: 2px 7px;
+  padding: 4px 10px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 11px;
   background: rgba(15, 23, 42, 0.9);
   border: 1px solid rgba(51, 65, 85, 0.9);
   color: #9ca3af;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .item-thumb-pill-dot {
@@ -500,10 +503,10 @@ input[type="file"] {
 }
 
 .item-body {
-  padding: 9px 10px 9px;
+  padding: 14px 16px 14px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
   flex: 1;
 }
 
@@ -520,11 +523,12 @@ input[type="file"] {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .item-meta span {
-  font-size: 10px;
-  padding: 2px 6px;
+  font-size: 11px;
+  padding: 2px 8px;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(51, 65, 85, 0.9);
@@ -532,11 +536,12 @@ input[type="file"] {
 }
 
 .item-status {
-  font-size: 10px;
+  font-size: 11px;
   color: #9ca3af;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .item-status-dot {
@@ -551,37 +556,80 @@ input[type="file"] {
 }
 
 .item-tags {
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.5;
   color: #e5e7eb;
-  max-height: 80px;
-  overflow: auto;
   padding-right: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .item-tags code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
   background: rgba(15, 23, 42, 0.55);
-  padding: 2px 5px;
-  border-radius: 999px;
-  margin: 0 3px 3px 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin: 0 4px 4px 0;
   display: inline-block;
   border: 1px solid rgba(31, 41, 55, 0.9);
+  color: #60a5fa;
+}
+
+.result-caption {
+  font-size: 13px;
+  color: #f3f4f6;
+  font-style: italic;
+  margin-bottom: 2px;
+}
+
+.result-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.badge-style,
+.badge-color {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(75, 85, 99, 0.8);
+  background: rgba(31, 41, 55, 0.5);
+  color: #d1d5db;
+}
+
+.badge-style {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.badge-color {
+  color: #a78bfa;
+  border-color: rgba(167, 139, 250, 0.4);
+}
+
+.tags-list-container {
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .item-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 3px;
-  font-size: 10px;
-  color: #6b7280;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(31, 41, 55, 0.6);
+  font-size: 11px;
+  color: #9ca3af;
 }
 
 .item-footer button {
-  font-size: 10px;
-  padding: 3px 8px;
+  font-size: 11px;
+  padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid rgba(55, 65, 81, 0.9);
   background: rgba(15, 23, 42, 0.9);

@@ -2,6 +2,7 @@ from fastapi import APIRouter, File, UploadFile, Form, HTTPException
 from typing import Annotated, List, Optional, Any
 import httpx
 import asyncio
+import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/tag-image", tags=["image"])
 
 def _process_image_bytes(image_bytes: bytes, model_key: str, num_tags: int,
                         custom_keywords: list, mode: str) -> dict:
+    start_time = time.time()
     caption = ""
     tags = []
     style = ""
@@ -28,6 +30,9 @@ def _process_image_bytes(image_bytes: bytes, model_key: str, num_tags: int,
 
     if mode in ("clip", "both"):
         style, color, clip_hashtags = clip_service.predict(image_bytes, num_tags=num_tags)
+
+    duration = time.time() - start_time
+    print(f"Image processed in {duration:.3f}s [model={model_key}, mode={mode}]")
 
     return {
         "caption": caption,
@@ -55,6 +60,7 @@ async def tag_image(
     custom_vocabulary: str = Form(None, description="Comma-separated list of custom categories"),
     mode: str = Form("both", description="Mode: clip, vision, or both"),
 ):
+    req_start = time.time()
 
     num_tags = parse_num_tags(num_tags, config.default_num_tags)
     custom_keywords = [k.strip() for k in custom_vocabulary.split(",")] if custom_vocabulary else None
@@ -71,6 +77,9 @@ async def tag_image(
         None,
         partial(_process_image_bytes, image_bytes, model, num_tags, custom_keywords, mode)
     )
+
+    duration = time.time() - req_start
+    print(f"-> [Endpoint /tag-image] Total request time: {duration:.3f}s")
 
     return TagResponse(
         tags=result["tags"],
@@ -89,6 +98,7 @@ async def tag_image_from_url(
     custom_vocabulary: str = Form(None),
     mode: str = Form("both", description="Mode: clip, vision, or both"),
 ):
+    req_start = time.time()
 
     num_tags = parse_num_tags(num_tags, config.default_num_tags)
     custom_keywords = [k.strip() for k in custom_vocabulary.split(",")] if custom_vocabulary else None
@@ -118,6 +128,9 @@ async def tag_image_from_url(
         partial(_process_image_bytes, image_bytes, model, num_tags, custom_keywords, mode)
     )
 
+    duration = time.time() - req_start
+    print(f"-> [Endpoint /tag-image/url] Total request time: {duration:.3f}s")
+
     return TagResponse(
         tags=result["tags"],
         caption=result["caption"],
@@ -136,6 +149,7 @@ async def tag_images_from_urls(
     custom_vocabulary: str = Form(None),
     mode: str = Form("both", description="Mode: clip, vision, or both"),
 ):
+    req_start = time.time()
 
     num_tags = parse_num_tags(num_tags, config.default_num_tags)
     custom_keywords = [k.strip() for k in custom_vocabulary.split(",")] if custom_vocabulary else None
@@ -189,4 +203,7 @@ async def tag_images_from_urls(
         tasks = [process_url(url, executor) for url in urls]
         results = await asyncio.gather(*tasks)
 
+    duration = time.time() - req_start
+    print(f"-> [Endpoint /tag-image/urls-batch] Total request time for {len(urls)} items: {duration:.3f}s")
+    
     return {"results": results}
