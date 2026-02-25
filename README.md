@@ -1,77 +1,143 @@
-## Image Hashtag API với Qwen3 Local
+# Image Hashtag API
 
-Project này cung cấp một API đơn giản (FastAPI) để nhận ảnh và sinh ra danh sách hashtag phục vụ đăng bài content, sử dụng mô hình Qwen3 (hoặc Qwen-VL) chạy local trên máy tính.
+FastAPI-based image tagging service that generates hashtags, captions, style, and color predictions for images using local vision AI models.
 
-### 1. Yêu cầu môi trường
+## Features
 
-- Python 3.10+ (khuyến nghị)
-- Windows 10/11
-- Một server Qwen3 / Qwen-VL chạy local và **phơi bày API tương thích OpenAI** (ví dụ qua vLLM, Ollama, ModelScope…).
+- **Image Captioning**: Generate captions using ViT-GPT2, BLIP, or GIT models
+- **CLIP Classification**: Predict image style and dominant colors
+- **Hashtag Generation**: Auto-generate relevant hashtags from captions or CLIP predictions
+- **Batch Processing**: Process multiple images from URLs
+- **Web Interface**: Built-in UI for testing and batch uploads
 
-> Lưu ý: Code này giả định server có endpoint `/v1/chat/completions` giống OpenAI và hỗ trợ input hình ảnh.
+## Requirements
 
-### 2. Cài đặt dependency
+- Python 3.10+
+- 8GB+ RAM recommended
+- GPU recommended for faster processing (CUDA)
 
-Trong thư mục project:
+## Installation
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate
+# Create virtual environment
+python -m venv venv
+
+# Activate (Linux/macOS)
+source venv/bin/activate
+
+# Activate (Windows)
+venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Cấu hình Qwen3 local
+## Configuration
 
-Tạo file `.env` cùng cấp với `main.py` (có thể copy từ ví dụ dưới và chỉnh lại):
+Edit `config.yaml` to customize settings:
 
-```bash
-QWEN_API_BASE=http://localhost:11434/v1
-QWEN_API_KEY=EMPTY
-QWEN_MODEL_NAME=qwen3-vl
+```yaml
+app:
+  host: "0.0.0.0"
+  port: 8000
+  reload: true
+
+model:
+  default: "vit-gpt2"
+  available:
+    vit-gpt2: "nlpconnect/vit-gpt2-image-captioning"
+    blip-base: "Salesforce/blip-image-captioning-base"
+    git-base: "microsoft/git-base"
+
+processing:
+  max_length: 32
+  num_beams: 4
+  default_num_tags: 10
+  max_num_tags: 50
 ```
 
-- **QWEN_API_BASE**: base URL của server Qwen3 local.
-- **QWEN_API_KEY**: nếu server không yêu cầu key, có thể để `EMPTY`.
-- **QWEN_MODEL_NAME**: tên model trên server (ví dụ: `qwen3-vl`, `qwen-vl`, tùy cấu hình).
-
-### 4. Chạy API
+## Running the API
 
 ```bash
-.venv\Scripts\activate
 python main.py
 ```
 
-Mặc định API sẽ chạy tại `http://localhost:8000`.
+API runs at `http://localhost:8000`
 
-- Kiểm tra health:
-  - `GET http://localhost:8000/health`
+- Web UI: `http://localhost:8000/`
+- Health check: `http://localhost:8000/health`
+- API docs: `http://localhost:8000/docs`
 
-### 5. Endpoint đánh hashtag ảnh
+## API Endpoints
 
-- **Method**: `POST`
-- **URL**: `http://localhost:8000/tag-image`
-- **Content-Type**: `multipart/form-data`
-- **Body**:
-  - `file`: file ảnh (bắt buộc)
-  - `num_tags`: số lượng hashtag muốn sinh (mặc định 10)
-  - `language`: ngôn ngữ hashtag, `vi` (mặc định) hoặc `en`
+### POST /tag-image
 
-**Response mẫu**:
+Generate hashtags from an uploaded image.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| file | File | Image file (required) |
+| num_tags | int | Number of hashtags (default: 10) |
+| model | string | Model: `vit-gpt2`, `blip-base`, `git-base` |
+| custom_vocabulary | string | Comma-separated custom keywords |
+| mode | string | `clip`, `vision`, or `both` (default: `both`) |
+
+**Example using curl:**
+
+```bash
+curl -X POST http://localhost:8000/tag-image \
+  -F "file=@image.jpg" \
+  -F "num_tags=10" \
+  -F "mode=both"
+```
+
+**Response:**
 
 ```json
 {
-  "tags": [
-    "#coffee",
-    "#morningvibes",
-    "#coffeetime"
-  ]
+  "tags": ["#photography", "#nature", "#travel"],
+  "caption": "A beautiful landscape with mountains",
+  "style": "Realism",
+  "color": "Blue",
+  "clip_hashtags": ["#photography", "#nature", "#landscape"]
 }
 ```
 
-Bạn có thể test nhanh bằng Postman, Apidog hoặc frontend bất kỳ gửi form-data.
+### POST /tag-image/url
 
-### 6. Tùy biến prompt
+Generate hashtags from an image URL.
 
-Logic tạo prompt hiện nằm trong hàm `build_prompt` trong `main.py`.  
-Bạn có thể chỉnh lại giọng văn, độ “content”, thêm yêu cầu về niche, brand, v.v. để phù hợp với use case của mình.
+```bash
+curl -X POST http://localhost:8000/tag-image/url \
+  -F "url=https://example.com/image.jpg" \
+  -F "num_tags=10"
+```
 
+### POST /tag-image/urls-batch
+
+Batch process multiple image URLs (max 50).
+
+```bash
+curl -X POST http://localhost:8000/tag-image/urls-batch \
+  -F "urls=https://example.com/1.jpg" \
+  -F "urls=https://example.com/2.jpg" \
+  -F "threads=4"
+```
+
+## Modes
+
+- **vision**: Uses image captioning models to generate caption, then extracts hashtags from caption
+- **clip**: Uses CLIP model to predict style, color, and generate hashtags
+- **both**: Returns results from both modes
+
+## Supported Styles (CLIP)
+
+2D, 3D, Cute, Animeart, Realism, Aesthetic, Cool, Fantasy, Comic, Horror, Cyberpunk, Lofi, Minimalism, Digitalart, Cinematic, Pixelart, Scifi, Vangoghart
+
+## Supported Colors
+
+Black, White, Blackandwhite, Red, Yellow, Blue, Green, Pink, Orange, Pastel, Hologram, Vintage, Colorful, Neutral, Light, Dark, Warm, Cold, Neon, Gradient, Purple, Brown, Grey
+
+## License
+
+MIT
