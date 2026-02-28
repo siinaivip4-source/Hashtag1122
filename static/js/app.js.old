@@ -405,16 +405,30 @@ async function runForFile(fileObj, index, customVocab) {
   fileObj.tags = tags;
   statusDot.className = "item-status-dot item-status-dot--ok";
 
+  const allStyles = ["None", "2D", "3D", "Cute", "Animeart", "Realism", "Aesthetic", "Cool", "Fantasy", "Comic", "Horror", "Cyberpunk", "Lofi", "Minimalism", "Digitalart", "Cinematic", "Pixelart", "Scifi", "Vangoghart"];
+  const allColors = ["None", "Black", "White", "Blackandwhite", "Red", "Yellow", "Blue", "Green", "Pink", "Orange", "Pastel", "Hologram", "Vintage", "Colorful", "Neutral", "Light", "Dark", "Warm", "Cold", "Neon", "Gradient", "Purple", "Brown", "Grey"];
+
   let resultHtml = "";
-  if (caption) {
-    resultHtml += `<div class="result-caption">📝 ${caption}</div>`;
-  }
-  if (style || color) {
-    const badges = [];
-    if (style) badges.push(`<span class="badge-style">🎨 ${style}</span>`);
-    if (color) badges.push(`<span class="badge-color">${color}</span>`);
-    resultHtml += `<div class="result-badges">${badges.join(" ")}</div>`;
-  }
+
+  const createSelectHtml = (options, selectedValue, label) => {
+    const opts = options.map(opt => `<option value="${opt}" ${opt === selectedValue ? "selected" : ""}>${opt}</option>`).join('');
+    return `<label style="display:inline-flex; flex-direction:column; font-size:10px; color:#9ca3af; gap:2px;">
+              ${label}
+              <select class="custom-val-select" style="font-size:11px; padding:2px 4px; border-radius:4px; max-width: 100px;" onchange="
+                const val = this.value;
+                const field = '${label.toLowerCase()}';
+                const fileIndex = ${index};
+                state.files[fileIndex][field] = val;
+              ">
+                ${opts}
+              </select>
+            </label>`;
+  };
+
+  resultHtml += `<div class="result-badges" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px; margin-bottom:8px;">`;
+  resultHtml += createSelectHtml(allStyles, style || "None", "Style");
+  resultHtml += createSelectHtml(allColors, color || "None", "Color");
+  resultHtml += `</div>`;
 
   statusText.textContent = tags.length ? "Đã hoàn thành" : "Không nhận được hashtag";
   tagsEl.innerHTML = "";
@@ -426,17 +440,23 @@ async function runForFile(fileObj, index, customVocab) {
   if (tags.length) {
     const tagsContainer = document.createElement("div");
     tagsContainer.className = "tags-list-container";
-    tags.forEach((tag) => {
+
+    tags.forEach((tag, tagIndex) => {
       const el = document.createElement("code");
       el.textContent = tag;
       tagsContainer.appendChild(el);
     });
+
     tagsEl.appendChild(tagsContainer);
 
     footerMeta.textContent = `${tags.length} hashtag`;
     copyBtn.disabled = false;
     copyBtn.onclick = () => {
-      navigator.clipboard.writeText(tags.join(" ")).catch(() => { });
+      const t = Array.isArray(fileObj.tags) ? fileObj.tags : [];
+      let cnf = [fileObj.style, fileObj.color];
+      cnf = cnf.filter(x => x && x !== "None");
+      const resTags = [...t, ...cnf];
+      navigator.clipboard.writeText(resTags.join(" ")).catch(() => { });
     };
   } else {
     const noTagsMsg = document.createElement("div");
@@ -530,16 +550,30 @@ async function runForUrl(urlObj, index, customVocab) {
   urlObj.tags = tags;
   statusDot.className = "item-status-dot item-status-dot--ok";
 
+  const allStyles = ["None", "2D", "3D", "Cute", "Animeart", "Realism", "Aesthetic", "Cool", "Fantasy", "Comic", "Horror", "Cyberpunk", "Lofi", "Minimalism", "Digitalart", "Cinematic", "Pixelart", "Scifi", "Vangoghart"];
+  const allColors = ["None", "Black", "White", "Blackandwhite", "Red", "Yellow", "Blue", "Green", "Pink", "Orange", "Pastel", "Hologram", "Vintage", "Colorful", "Neutral", "Light", "Dark", "Warm", "Cold", "Neon", "Gradient", "Purple", "Brown", "Grey"];
+
   let resultHtml = "";
-  if (caption) {
-    resultHtml += `<div class="result-caption">📝 ${caption}</div>`;
-  }
-  if (style || color) {
-    const badges = [];
-    if (style) badges.push(`<span class="badge-style">🎨 ${style}</span>`);
-    if (color) badges.push(`<span class="badge-color">${color}</span>`);
-    resultHtml += `<div class="result-badges">${badges.join(" ")}</div>`;
-  }
+
+  const createSelectHtml = (options, selectedValue, label) => {
+    const opts = options.map(opt => `<option value="${opt}" ${opt === selectedValue ? "selected" : ""}>${opt}</option>`).join('');
+    return `<label style="display:inline-flex; flex-direction:column; font-size:10px; color:#9ca3af; gap:2px;">
+              ${label}
+              <select class="custom-val-select" style="font-size:11px; padding:2px 4px; border-radius:4px; max-width: 100px;" onchange="
+                const val = this.value;
+                const field = '${label.toLowerCase()}';
+                const fileIndex = ${index};
+                state.urls[fileIndex][field] = val;
+              ">
+                ${opts}
+              </select>
+            </label>`;
+  };
+
+  resultHtml += `<div class="result-badges" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px; margin-bottom:8px;">`;
+  resultHtml += createSelectHtml(allStyles, style || "None", "Style");
+  resultHtml += createSelectHtml(allColors, color || "None", "Color");
+  resultHtml += `</div>`;
 
   statusText.textContent = tags.length ? "Đã hoàn thành" : "Không nhận được hashtag";
   tagsEl.innerHTML = "";
@@ -551,17 +585,23 @@ async function runForUrl(urlObj, index, customVocab) {
   if (tags.length) {
     const tagsContainer = document.createElement("div");
     tagsContainer.className = "tags-list-container";
-    tags.forEach((tag) => {
+
+    tags.forEach((tag, tagIndex) => {
       const el = document.createElement("code");
       el.textContent = tag;
       tagsContainer.appendChild(el);
     });
+
     tagsEl.appendChild(tagsContainer);
 
     footerMeta.textContent = `${tags.length} hashtag`;
     copyBtn.disabled = false;
     copyBtn.onclick = () => {
-      navigator.clipboard.writeText(tags.join(" ")).catch(() => { });
+      const t = Array.isArray(urlObj.tags) ? urlObj.tags : [];
+      let cnf = [urlObj.style, urlObj.color];
+      cnf = cnf.filter(x => x && x !== "None");
+      const resTags = [...t, ...cnf];
+      navigator.clipboard.writeText(resTags.join(" ")).catch(() => { });
     };
   } else {
     const noTagsMsg = document.createElement("div");
@@ -652,6 +692,14 @@ function copyAllHashtags() {
 function getExportData() {
   const data = [];
   let stt = 1;
+
+  const buildHashtags = (obj) => {
+    let t = Array.isArray(obj.tags) ? [...obj.tags] : [];
+    if (obj.style && obj.style !== "None") t.push(obj.style);
+    if (obj.color && obj.color !== "None") t.push(obj.color);
+    return t.join(" ");
+  };
+
   state.files.forEach((f) => {
     if (f.status === "done") {
       data.push({
@@ -660,7 +708,7 @@ function getExportData() {
         "Caption": f.caption || "",
         "Style": f.style || "",
         "Color": f.color || "",
-        "Hashtags": (f.tags || []).join(" ")
+        "Hashtags": buildHashtags(f)
       });
     }
   });
@@ -672,7 +720,7 @@ function getExportData() {
         "Caption": u.caption || "",
         "Style": u.style || "",
         "Color": u.color || "",
-        "Hashtags": (u.tags || []).join(" ")
+        "Hashtags": buildHashtags(u)
       });
     }
   });
