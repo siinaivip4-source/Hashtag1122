@@ -751,26 +751,18 @@ input[type="file"] {
   display: flex;
   flex-direction: column;
   height: max-content;
-  box-shadow: var(--shadow-md);
-  transition: border-color 0.22s, box-shadow 0.22s, transform 0.22s;
-  animation: item-appear 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
+  min-height: 380px;
+  /* Cố định chiều cao tối thiểu để tránh nhảy layout khi cuộn */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease;
 
-@keyframes item-appear {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.97);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  /* Sử dụng containment cơ bản để tối ưu render mà không gây lag/nhảy khi cuộn */
+  contain: layout style paint;
 }
 
 .item:hover {
   border-color: var(--border-accent);
-  box-shadow: var(--shadow-lg), 0 0 20px rgba(139, 92, 246, 0.10);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
   transform: translateY(-2px);
 }
 

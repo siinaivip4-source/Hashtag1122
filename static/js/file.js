@@ -3,16 +3,52 @@ function clearGalleryEmptyState() {
   if (empty) empty.remove();
 }
 
-function addFiles(fileList) {
+async function createThumbnail(file, maxWidth = 400, maxHeight = 400) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function addFiles(fileList) {
   const arr = Array.from(fileList || []);
   if (!arr.length) return;
 
   clearGalleryEmptyState();
 
-  arr.forEach((file) => {
-    if (!file.type.startsWith("image/")) return;
+  for (const file of arr) {
+    if (!file.type.startsWith("image/")) continue;
 
     const newIndex = state.files.length;
+    // Tạo thumbnail để tiết kiệm RAM/GPU thay vì dùng URL.createObjectURL(file)
+    const thumbUrl = await createThumbnail(file);
+
     const obj = {
       file,
       status: "pending",
@@ -21,7 +57,7 @@ function addFiles(fileList) {
       style: "",
       color: "",
       error: null,
-      previewUrl: URL.createObjectURL(file),
+      previewUrl: thumbUrl,
       lang: state.lang,
       numTags: state.numTags,
       model: state.model,
@@ -31,7 +67,7 @@ function addFiles(fileList) {
 
     const item = createItem(obj, newIndex);
     gallery.appendChild(item);
-  });
+  }
   updateSummary();
   runButton.disabled = !(state.files.length > 0 || state.urls.length > 0);
 }

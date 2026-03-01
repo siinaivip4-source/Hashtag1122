@@ -11,6 +11,8 @@ function createItem(fileObj, index) {
   const img = document.createElement("img");
   img.alt = fileObj.file.name;
   img.src = fileObj.previewUrl || "";
+  img.loading = "lazy";
+  img.decoding = "async";
 
   const label = document.createElement("div");
   label.className = "item-thumb-label";
@@ -76,6 +78,8 @@ function createUrlItem(urlObj, index) {
   const img = document.createElement("img");
   img.alt = urlObj.url;
   img.src = urlObj.url;
+  img.loading = "lazy";
+  img.decoding = "async";
   img.onerror = function () {
     this.style.display = "none";
     this.parentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6b7280;font-size:11px;">Ảnh không tải được</div>';
