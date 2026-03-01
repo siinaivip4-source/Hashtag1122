@@ -15,13 +15,13 @@ function clearAll() {
 function copyAllHashtags() {
   const allTags = [];
   state.files.forEach((f) => {
-    if (Array.isArray(f.tags) && f.tags.length) {
-      allTags.push(...f.tags);
+    if (Array.isArray(f.selectedTags) && f.selectedTags.length) {
+      allTags.push(...f.selectedTags);
     }
   });
   state.urls.forEach((u) => {
-    if (Array.isArray(u.tags) && u.tags.length) {
-      allTags.push(...u.tags);
+    if (Array.isArray(u.selectedTags) && u.selectedTags.length) {
+      allTags.push(...u.selectedTags);
     }
   });
   if (!allTags.length) return;
@@ -33,7 +33,9 @@ function getExportData() {
   let stt = state.startIndex;
 
   const buildHashtags = (obj) => {
-    let t = Array.isArray(obj.tags) ? [...obj.tags] : [];
+    let t = Array.isArray(obj.selectedTags) ? [...obj.selectedTags] : (Array.isArray(obj.tags) ? [...obj.tags] : []);
+    // Nếu có selectedTags thì đã được lọc/giới hạn sẵn, 
+    // nếu chưa chạy (có .tags nhưng chưa .selectedTags) thì build tạm
     if (obj.style && obj.style !== "None") t.push(obj.style);
     if (obj.color && obj.color !== "None") t.push(obj.color);
     return t.join(" ");

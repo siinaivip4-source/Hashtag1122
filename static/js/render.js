@@ -113,13 +113,21 @@ function renderResult({ obj, stateKey, index, tags, style, color, tagsEl, footer
 
     // ── Row 2: Hashtag dropdowns ─────────────────────────────────
     if (tags.length) {
+        // Lọc bỏ các tag trùng với Style hoặc Color
+        const filteredTags = tags.filter(t => {
+            const lowerT = t.toLowerCase();
+            const lowerStyle = (style || "").toLowerCase();
+            const lowerColor = (color || "").toLowerCase();
+            return lowerT !== lowerStyle && lowerT !== lowerColor;
+        }).slice(0, 3); // Giới hạn lấy 3 tag đầu tiên
+
         // Lưu bản copy có thể chỉnh sửa — mỗi phần tử là giá trị hiện tại của dropdown đó
-        obj.selectedTags = [...tags];
+        obj.selectedTags = [...filteredTags];
 
         const tagsRow = document.createElement("div");
         tagsRow.className = "result-tags-row";
 
-        tags.forEach((tag, i) => {
+        filteredTags.forEach((tag, i) => {
             const sel = createSelectEl(
                 ALL_HASHTAGS,
                 tag,
@@ -133,7 +141,7 @@ function renderResult({ obj, stateKey, index, tags, style, color, tagsEl, footer
 
         tagsEl.appendChild(tagsRow);
 
-        footerMeta.textContent = `${tags.length} hashtag`;
+        footerMeta.textContent = `${filteredTags.length} hashtag`;
         footerMeta.style.color = "";
         copyBtn.disabled = false;
 
