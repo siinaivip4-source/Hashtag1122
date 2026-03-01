@@ -1,6 +1,13 @@
+function clearGalleryEmptyState() {
+  const empty = gallery.querySelector('.gallery-empty');
+  if (empty) empty.remove();
+}
+
 function addFiles(fileList) {
   const arr = Array.from(fileList || []);
   if (!arr.length) return;
+
+  clearGalleryEmptyState();
 
   const startIndex = state.files.length;
   arr.forEach((file, i) => {
@@ -28,6 +35,19 @@ function addFiles(fileList) {
   runButton.disabled = !(state.files.length > 0 || state.urls.length > 0);
 }
 
+// Drag-over visual feedback
+document.addEventListener('DOMContentLoaded', () => {
+  const dz = document.getElementById('dropzoneEl');
+  if (!dz) return;
+  dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dz.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+  });
+});
+
 function parseUrls(text) {
   const lines = text.split(/[\r\n]+/);
   const urls = [];
@@ -43,6 +63,8 @@ function parseUrls(text) {
 
 function addUrls(urlList) {
   if (!urlList.length) return;
+
+  clearGalleryEmptyState();
 
   const startIndex = state.urls.length;
   urlList.forEach((url, i) => {
