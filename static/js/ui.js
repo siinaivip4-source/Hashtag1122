@@ -33,8 +33,7 @@ function createItem(fileObj, index) {
   rowTop.className = "item-row-top";
   rowTop.innerHTML = `
     <div class="item-meta">
-      <span>EN</span>
-      <span>#${fileObj.numTags}</span>
+      <span class="stt-badge">STT: ${state.startIndex + index}</span>
       <span class="model-badge model-badge--${fileObj.model || state.model}">${modelName}</span>
     </div>
     <div class="item-status">
@@ -104,8 +103,7 @@ function createUrlItem(urlObj, index) {
   rowTop.className = "item-row-top";
   rowTop.innerHTML = `
     <div class="item-meta">
-      <span>EN</span>
-      <span>#${urlObj.numTags}</span>
+      <span class="stt-badge">STT: ${state.startIndex + index}</span>
       <span class="model-badge model-badge--${urlObj.model || state.model}">${modelName}</span>
     </div>
     <div class="item-status">

@@ -8,16 +8,19 @@ var state = {
   running: false,
   completed: 0,
   failed: 0,
-  inputMode: "file"
+  inputMode: "file",
+  startIndex: 1
 };
 
 var fileInput = document.getElementById("fileInput");
+var folderInput = document.getElementById("folderInput");
 var runButton = document.getElementById("runButton");
 var clearButton = document.getElementById("clearButton");
 var copyAllButton = document.getElementById("copyAllButton");
 var exportJsonButton = document.getElementById("exportJsonButton");
 var exportExcelButton = document.getElementById("exportExcelButton");
 var threadsInput = document.getElementById("threadsInput");
+var startIndexInput = document.getElementById("startIndexInput");
 var customVocabInput = document.getElementById("customVocabInput");
 var modelSelect = document.getElementById("modelSelect");
 var modeSelect = document.getElementById("modeSelect");

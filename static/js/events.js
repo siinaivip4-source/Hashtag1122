@@ -3,6 +3,11 @@ fileInput.addEventListener("change", (e) => {
   e.target.value = "";
 });
 
+folderInput.addEventListener("change", (e) => {
+  addFiles(e.target.files);
+  e.target.value = "";
+});
+
 urlInput.addEventListener("change", () => {
   const urls = parseUrls(urlInput.value);
   if (urls.length > 0) {
@@ -109,6 +114,14 @@ modeSelect.addEventListener("change", () => {
     u.mode = state.mode;
   });
   updateSummary();
+  refreshGallery();
+});
+
+startIndexInput.addEventListener("change", () => {
+  let v = parseInt(startIndexInput.value, 10);
+  if (isNaN(v) || v < 1) v = 1;
+  startIndexInput.value = v;
+  state.startIndex = v;
   refreshGallery();
 });
 

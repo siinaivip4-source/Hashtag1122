@@ -25,7 +25,8 @@ function getModeDisplayName(mode) {
 
 function updateSummary() {
   const modeDisplay = getModeDisplayName(state.mode);
-  summaryText.textContent = `#${state.numTags} tag · ${modeDisplay} · ${state.model}`;
+  const modelDisplay = getModelDisplayName(state.model);
+  summaryText.textContent = `${modeDisplay} · ${modelDisplay}`;
   const total = state.files.length + state.urls.length;
   resultSummary.textContent = `${total} ảnh · ${state.completed} xong · ${state.failed} lỗi`;
 

@@ -9,7 +9,7 @@
   <link rel="icon" href="https://idea.tp.com.vn/favicon.ico" type="image/x-icon" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="/static/css/styles.css" />
+  <link rel="stylesheet" href="/static/css/styles.css?v=1.0.1" />
 </head>
 
 <body>
@@ -29,13 +29,7 @@
             <div class="title-sub"></div>
           </div>
         </div>
-        <div class="badge-stack">
-          <div class="badge">
-            <span class="badge-dot badge-dot--ok"></span>
-            Online
-          </div>
-          <div class="badge">FastAPI · REST</div>
-        </div>
+        <div class="badge-stack"></div>
       </header>
 
       <!-- Scrollable area for cards -->
@@ -46,7 +40,7 @@
             <div class="card-title">
               <div class="card-title-icon">⚙</div>
               Cấu hình
-              <span id="summaryText">#10 tag · tiếng Việt</span>
+              <span id="summaryText">Cả 2 · vit-gpt2</span>
             </div>
             <div class="card-actions">
               <button id="clearButton" class="btn btn-sm" type="button">
@@ -83,14 +77,22 @@
             </div>
           </div>
 
-          <!-- Model -->
-          <div class="field-row" style="margin-bottom:0;">
-            <label>Model AI</label>
-            <select id="modelSelect" style="flex:1; min-width:0;">
-              <option value="vit-gpt2">⚡ ViT-GPT2 (Fast)</option>
-              <option value="blip-base">✨ BLIP Base (Enhanced)</option>
-              <option value="git-base">🔬 GIT Base (Microsoft)</option>
-            </select>
+          <!-- Model & Start Index Row -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:0;">
+            <div class="field-row" style="flex-direction:column; align-items:flex-start; margin-bottom:0;">
+              <label>Model AI</label>
+              <select id="modelSelect" style="margin-top:5px; min-width:0; width:100%;">
+                <option value="vit-gpt2">⚡ ViT-GPT2 (Fast)</option>
+                <option value="blip-base">✨ BLIP Base (Enhanced)</option>
+                <option value="git-base">🔬 GIT Base (Microsoft)</option>
+              </select>
+            </div>
+            <div class="field-row" style="flex-direction:column; align-items:flex-start; margin-bottom:0;">
+              <label>Bắt đầu từ số</label>
+              <div class="field-inline" style="margin-top:5px; width:100%;">
+                <input id="startIndexInput" type="number" min="1" value="1" style="width:100%;" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -111,17 +113,20 @@
 
           <!-- File Mode -->
           <div id="fileModeArea">
-            <label for="fileInput">
-              <div class="dropzone" id="dropzoneEl">
-                <div class="dropzone-icon">⇪</div>
-                <div class="dropzone-copy">
-                  <b>Kéo &amp; thả ảnh vào đây</b> hoặc
-                  <label for="fileInput" style="min-width:unset;">chọn file thủ công</label>
-                  <span>Hỗ trợ JPG, PNG, WEBP, GIF · Nhiều ảnh cùng lúc</span>
-                </div>
+            <div class="dropzone" id="dropzoneEl">
+              <div class="dropzone-icon">⇪</div>
+              <div class="dropzone-copy">
+                <b>Kéo &amp; thả ảnh vào đây</b> hoặc
+                <label for="fileInput" style="cursor:pointer; color:#c4b5fd; text-decoration:underline;">chọn
+                  file</label> hoặc
+                <label for="folderInput" style="cursor:pointer; color:#c4b5fd; text-decoration:underline;">chọn thư
+                  mục</label>
+                <span>Hỗ trợ JPG, PNG, WEBP, GIF · Thư mục &amp; Nhiều ảnh</span>
               </div>
-            </label>
-            <input id="fileInput" type="file" multiple accept="image/*" />
+            </div>
+            <input id="fileInput" type="file" multiple accept="image/*" style="display:none;" />
+            <input id="folderInput" type="file" webkitdirectory directory multiple accept="image/*"
+              style="display:none;" />
           </div>
 
           <!-- URL Mode -->
@@ -179,15 +184,15 @@
     </div>
   </div>
 
-  <script src="/static/js/state.js"></script>
-  <script src="/static/js/utils.js"></script>
-  <script src="/static/js/ui.js"></script>
-  <script src="/static/js/file.js"></script>
-  <script src="/static/js/render.js"></script>
-  <script src="/static/js/api.js"></script>
-  <script src="/static/js/worker.js"></script>
-  <script src="/static/js/export.js"></script>
-  <script src="/static/js/events.js"></script>
+  <script src="/static/js/state.js?v=1.0.1"></script>
+  <script src="/static/js/utils.js?v=1.0.1"></script>
+  <script src="/static/js/ui.js?v=1.0.1"></script>
+  <script src="/static/js/file.js?v=1.0.1"></script>
+  <script src="/static/js/render.js?v=1.0.1"></script>
+  <script src="/static/js/api.js?v=1.0.1"></script>
+  <script src="/static/js/worker.js?v=1.0.1"></script>
+  <script src="/static/js/export.js?v=1.0.1"></script>
+  <script src="/static/js/events.js?v=1.0.1"></script>
 </body>
 
 </html>

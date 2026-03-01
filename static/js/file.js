@@ -9,9 +9,10 @@ function addFiles(fileList) {
 
   clearGalleryEmptyState();
 
-  const startIndex = state.files.length;
-  arr.forEach((file, i) => {
+  arr.forEach((file) => {
     if (!file.type.startsWith("image/")) return;
+
+    const newIndex = state.files.length;
     const obj = {
       file,
       status: "pending",
@@ -28,7 +29,7 @@ function addFiles(fileList) {
     };
     state.files.push(obj);
 
-    const item = createItem(obj, startIndex + i);
+    const item = createItem(obj, newIndex);
     gallery.appendChild(item);
   });
   updateSummary();
@@ -63,6 +64,13 @@ document.addEventListener('DOMContentLoaded', () => {
       addFiles(files);
     }
   }, false);
+
+  // Trigger fileInput when clicking anywhere else in the dropzone
+  dz.addEventListener('click', (e) => {
+    if (e.target.tagName.toLowerCase() !== 'label') {
+      fileInput.click();
+    }
+  });
 });
 
 function parseUrls(text) {
@@ -83,8 +91,8 @@ function addUrls(urlList) {
 
   clearGalleryEmptyState();
 
-  const startIndex = state.urls.length;
-  urlList.forEach((url, i) => {
+  urlList.forEach((url) => {
+    const newIndex = state.urls.length;
     const obj = {
       url,
       status: "pending",
@@ -100,7 +108,7 @@ function addUrls(urlList) {
     };
     state.urls.push(obj);
 
-    const item = createUrlItem(obj, startIndex + i);
+    const item = createUrlItem(obj, newIndex);
     gallery.appendChild(item);
   });
   updateSummary();

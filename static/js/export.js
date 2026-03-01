@@ -30,7 +30,7 @@ function copyAllHashtags() {
 
 function getExportData() {
   const data = [];
-  let stt = 1;
+  let stt = state.startIndex;
 
   const buildHashtags = (obj) => {
     let t = Array.isArray(obj.tags) ? [...obj.tags] : [];
