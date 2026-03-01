@@ -26,7 +26,7 @@
               HashTag AI
               <span class="pill">Multi-Model</span>
             </div>
-            <div class="title-sub">Sinh hashtag tối ưu cho mạng xã hội từ ảnh</div>
+            <div class="title-sub"></div>
           </div>
         </div>
         <div class="badge-stack">
@@ -38,115 +38,115 @@
         </div>
       </header>
 
-      <!-- Config Card -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <div class="card-title-icon">⚙</div>
-            Cấu hình
-            <span id="summaryText">#10 tag · tiếng Việt</span>
-          </div>
-          <div class="card-actions">
-            <button id="clearButton" class="btn btn-sm" type="button">
-              🗑 Xóa danh sách
-            </button>
-          </div>
-        </div>
-
-        <!-- Vocab -->
-        <div class="field-row" style="flex-direction: column; align-items: flex-start;">
-          <label>Danh mục giới hạn <span style="font-weight:400;color:var(--text-muted)">(tùy chọn)</span></label>
-          <textarea id="customVocabInput" rows="2"
-            placeholder="Ví dụ: quần áo, thời trang, váy, đầm, áo dài..."></textarea>
-          <div class="field-hint">Nếu nhập, chỉ sinh hashtag nằm trong danh sách này.</div>
-        </div>
-
-        <!-- Threads & Model Row -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-          <div class="field-row" style="flex-direction:column; align-items:flex-start; margin-bottom:0;">
-            <label>Số luồng xử lý</label>
-            <div class="field-inline" style="margin-top:5px;">
-              <input id="threadsInput" type="number" min="1" max="10" value="2" />
-              <span style="font-size:10.5px;color:var(--text-muted)">1–10</span>
+      <!-- Scrollable area for cards -->
+      <div class="panel-scroll">
+        <!-- Config Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <div class="card-title-icon">⚙</div>
+              Cấu hình
+              <span id="summaryText">#10 tag · tiếng Việt</span>
             </div>
-            <div class="field-hint">Tăng tốc khi nhiều ảnh.</div>
+            <div class="card-actions">
+              <button id="clearButton" class="btn btn-sm" type="button">
+                🗑 Xóa danh sách
+              </button>
+            </div>
           </div>
-          <div class="field-row" style="flex-direction:column; align-items:flex-start; margin-bottom:0;">
-            <label>Chế độ xử lý</label>
-            <select id="modeSelect" style="margin-top:5px; min-width:0; width:100%;">
-              <option value="both">Cả 2 (Style + Hashtags)</option>
-              <option value="clip">Chỉ CLIP (Style + Color)</option>
-              <option value="vision">Chỉ Vision (Hashtags)</option>
+
+          <!-- Vocab -->
+          <div class="field-row" style="flex-direction: column; align-items: flex-start;">
+            <label>Danh mục giới hạn <span style="font-weight:400;color:var(--text-muted)">(tùy chọn)</span></label>
+            <textarea id="customVocabInput" rows="2"
+              placeholder="Ví dụ: quần áo, thời trang, váy, đầm, áo dài..."></textarea>
+            <div class="field-hint">Nếu nhập, chỉ sinh hashtag nằm trong danh sách này.</div>
+          </div>
+
+          <!-- Threads & Model Row -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+            <div class="field-row" style="flex-direction:column; align-items:flex-start; margin-bottom:0;">
+              <label>Số luồng xử lý</label>
+              <div class="field-inline" style="margin-top:5px;">
+                <input id="threadsInput" type="number" min="1" max="10" value="2" />
+                <span style="font-size:10.5px;color:var(--text-muted)">1–10</span>
+              </div>
+              <div class="field-hint">Tăng tốc khi nhiều ảnh.</div>
+            </div>
+            <div class="field-row" style="flex-direction:column; align-items:flex-start; margin-bottom:0;">
+              <label>Chế độ xử lý</label>
+              <select id="modeSelect" style="margin-top:5px; min-width:0; width:100%;">
+                <option value="both">Cả 2 (Style + Hashtags)</option>
+                <option value="clip">Chỉ CLIP (Style + Color)</option>
+                <option value="vision">Chỉ Vision (Hashtags)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Model -->
+          <div class="field-row" style="margin-bottom:0;">
+            <label>Model AI</label>
+            <select id="modelSelect" style="flex:1; min-width:0;">
+              <option value="vit-gpt2">⚡ ViT-GPT2 (Fast)</option>
+              <option value="blip-base">✨ BLIP Base (Enhanced)</option>
+              <option value="git-base">🔬 GIT Base (Microsoft)</option>
             </select>
           </div>
         </div>
 
-        <!-- Model -->
-        <div class="field-row" style="margin-bottom:0;">
-          <label>Model AI</label>
-          <select id="modelSelect" style="flex:1; min-width:0;">
-            <option value="vit-gpt2">⚡ ViT-GPT2 (Fast)</option>
-            <option value="blip-base">✨ BLIP Base (Enhanced)</option>
-            <option value="git-base">🔬 GIT Base (Microsoft)</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Upload Card -->
-      <div class="card" style="flex:1;">
-        <div class="card-header">
-          <div class="card-title">
-            <div class="card-title-icon">📁</div>
-            Nguồn ảnh
-          </div>
-        </div>
-
-        <!-- Toggle -->
-        <div class="input-mode-toggle">
-          <button id="modeFileBtn" class="toggle toggle--active" type="button">📁 Upload ảnh</button>
-          <button id="modeUrlBtn" class="toggle" type="button">🔗 Paste URL</button>
-        </div>
-
-        <!-- File Mode -->
-        <div id="fileModeArea">
-          <label for="fileInput">
-            <div class="dropzone" id="dropzoneEl">
-              <div class="dropzone-icon">⇪</div>
-              <div class="dropzone-copy">
-                <b>Kéo &amp; thả ảnh vào đây</b> hoặc
-                <label for="fileInput" style="min-width:unset;">chọn file thủ công</label>
-                <span>Hỗ trợ JPG, PNG, WEBP, GIF · Nhiều ảnh cùng lúc</span>
-              </div>
+        <!-- Upload Card -->
+        <div class="card" style="flex:1;">
+          <div class="card-header">
+            <div class="card-title">
+              <div class="card-title-icon">📁</div>
+              Nguồn ảnh
             </div>
-          </label>
-          <input id="fileInput" type="file" multiple accept="image/*" />
-        </div>
-
-        <!-- URL Mode -->
-        <div id="urlModeArea" style="display: none;">
-          <textarea id="urlInput" rows="4"
-            placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.png&#10;..."></textarea>
-          <div>Nhập mỗi URL trên một dòng · Tối đa 50 URLs</div>
-        </div>
-
-        <!-- API hint -->
-        <div class="hint-row">
-          <span>
-            API endpoint:
-            <span class="hint-row-code">POST /tag-image</span>
-          </span>
-          <span id="queueHint"></span>
-        </div>
-
-        <!-- Run Row -->
-        <div class="footer-row">
-          <div class="status">
-            <span id="statusDot" class="status-dot"></span>
-            <div id="statusText" class="status-text">Sẵn sàng. Chưa có ảnh nào.</div>
           </div>
-          <button id="runButton" class="btn btn-primary" type="button">
-            ▶ Chạy hashtag
-          </button>
+
+          <!-- Toggle -->
+          <div class="input-mode-toggle">
+            <button id="modeFileBtn" class="toggle toggle--active" type="button">📁 Upload ảnh</button>
+            <button id="modeUrlBtn" class="toggle" type="button">🔗 Paste URL</button>
+          </div>
+
+          <!-- File Mode -->
+          <div id="fileModeArea">
+            <label for="fileInput">
+              <div class="dropzone" id="dropzoneEl">
+                <div class="dropzone-icon">⇪</div>
+                <div class="dropzone-copy">
+                  <b>Kéo &amp; thả ảnh vào đây</b> hoặc
+                  <label for="fileInput" style="min-width:unset;">chọn file thủ công</label>
+                  <span>Hỗ trợ JPG, PNG, WEBP, GIF · Nhiều ảnh cùng lúc</span>
+                </div>
+              </div>
+            </label>
+            <input id="fileInput" type="file" multiple accept="image/*" />
+          </div>
+
+          <!-- URL Mode -->
+          <div id="urlModeArea" style="display: none;">
+            <textarea id="urlInput" rows="4"
+              placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.png&#10;..."></textarea>
+            <div>Nhập mỗi URL trên một dòng · Tối đa 50 URLs</div>
+          </div>
+
+          <!-- API hint -->
+          <div class="hint-row">
+            <span></span>
+            <span id="queueHint"></span>
+          </div>
+
+          <!-- Run Row -->
+          <div class="footer-row">
+            <div class="status">
+              <span id="statusDot" class="status-dot"></span>
+              <div id="statusText" class="status-text">Sẵn sàng. Chưa có ảnh nào.</div>
+            </div>
+            <button id="runButton" class="btn btn-primary" type="button">
+              ▶ Chạy hashtag
+            </button>
+          </div>
         </div>
       </div>
 
