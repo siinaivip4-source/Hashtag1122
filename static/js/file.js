@@ -37,15 +37,32 @@ function addFiles(fileList) {
 
 // Drag-over visual feedback
 document.addEventListener('DOMContentLoaded', () => {
+  // Improved Drag-over visual feedback
   const dz = document.getElementById('dropzoneEl');
   if (!dz) return;
-  dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag-over'); });
-  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-  dz.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dz.classList.remove('drag-over');
-    if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dz.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
   });
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dz.addEventListener(eventName, () => dz.classList.add('drag-over'), false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dz.addEventListener(eventName, () => dz.classList.remove('drag-over'), false);
+  });
+
+  dz.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    if (files && files.length > 0) {
+      addFiles(files);
+    }
+  }, false);
 });
 
 function parseUrls(text) {
