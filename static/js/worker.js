@@ -139,3 +139,26 @@ async function runSingleTask(type, index) {
     }
     updateSummary();
 }
+
+async function retryAll() {
+    if (state.running) return;
+
+    // Reset status of all items
+    state.files.forEach(f => {
+        f.status = "pending";
+        delete f.selectedTags; // Clear previous manual selections if re-running all
+    });
+    state.urls.forEach(u => {
+        u.status = "pending";
+        delete u.selectedTags;
+    });
+
+    state.completed = 0;
+    state.failed = 0;
+
+    refreshGallery();
+    updateSummary();
+
+    // Start running
+    await runAll();
+}

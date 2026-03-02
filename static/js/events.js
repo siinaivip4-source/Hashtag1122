@@ -55,6 +55,10 @@ runButton.addEventListener("click", () => {
   runAll();
 });
 
+retryAllButton.addEventListener("click", () => {
+  retryAll();
+});
+
 stopButton.addEventListener("click", () => {
   state.running = false;
   statusText.innerHTML = "Đang dừng... Đợi các luồng hiện tại hoàn tất.";

@@ -37,6 +37,13 @@ function updateSummary() {
   } else {
     queueHint.textContent = `Đã chọn ${total} ảnh.`;
   }
+
+  // Cập nhật hiển thị nút Chạy lại
+  if (retryAllButton) {
+    const hasAnyDone = state.files.some(f => f.status === "done" || f.status === "error") ||
+      state.urls.some(u => u.status === "done" || u.status === "error");
+    retryAllButton.style.display = (hasAnyDone && !state.running) ? "inline-flex" : "none";
+  }
 }
 
 function setRunning(running, finishedMessage = null) {
@@ -61,6 +68,8 @@ function setRunning(running, finishedMessage = null) {
   if (modeFileBtn) modeFileBtn.disabled = running;
   if (modeUrlBtn) modeUrlBtn.disabled = running;
 
+  if (modeUrlBtn) modeUrlBtn.disabled = running;
+
   if (stopButton) {
     stopButton.style.display = running ? "inline-flex" : "none";
     stopButton.disabled = !running;
@@ -80,9 +89,11 @@ function setRunning(running, finishedMessage = null) {
       }
     }
   }
+
+  // Luôn cập nhật summary để đồng bộ UI (bao gồm nút Chạy lại)
+  updateSummary();
 }
 
 function totalItems() {
   return (state.files ? state.files.length : 0) + (state.urls ? state.urls.length : 0);
 }
-
