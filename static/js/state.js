@@ -3,13 +3,15 @@ var state = {
   urls: [],
   lang: "en",
   numTags: 10,
-  model: "vit-gpt2",
-  mode: "both",
+  model: "clip-openai",
+  mode: "clip",
   running: false,
   completed: 0,
   failed: 0,
   inputMode: "file",
-  startIndex: 1
+  startIndex: 1,
+  modelReady: false,
+  modelLoading: false
 };
 
 var fileInput = document.getElementById("fileInput");

@@ -47,14 +47,9 @@
           </div>
 
           <!-- Vocab -->
-          <div class="field-row" style="flex-direction: column; align-items: flex-start;">
-            <label>Danh mục giới hạn <span style="font-weight:400;color:var(--text-muted)">(tùy chọn)</span></label>
-            <textarea id="customVocabInput" rows="2"
-              placeholder="Ví dụ: quần áo, thời trang, váy, đầm, áo dài..."></textarea>
-            <div class="field-hint">Nếu nhập, chỉ sinh hashtag nằm trong danh sách này.</div>
-          </div>
+    
 
-          <!-- Threads & Model Row -->
+          <!-- Threads & (legacy) Mode Row -->
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
             <div class="field-row" style="flex-direction:column; align-items:flex-start; margin-bottom:0;">
               <label>Số luồng xử lý</label>
@@ -64,24 +59,16 @@
               </div>
               <div class="field-hint">Tăng tốc khi nhiều ảnh.</div>
             </div>
-            <div class="field-row" style="flex-direction:column; align-items:flex-start; margin-bottom:0;">
-              <label>Chế độ xử lý</label>
-              <select id="modeSelect" style="margin-top:5px; min-width:0; width:100%;">
-                <option value="both">Cả 2 (Style + Hashtags)</option>
-                <option value="clip">Chỉ CLIP (Style + Color)</option>
-                <option value="vision">Chỉ Vision (Hashtags)</option>
-              </select>
-            </div>
+            
           </div>
 
           <!-- Model & Start Index Row -->
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:0;">
             <div class="field-row" style="flex-direction:column; align-items:flex-start; margin-bottom:0;">
-              <label>Model AI</label>
+              <label>Model</label>
               <select id="modelSelect" style="margin-top:5px; min-width:0; width:100%;">
-                <option value="vit-gpt2">⚡ ViT-GPT2 (Fast)</option>
-                <option value="blip-base">✨ BLIP Base (Enhanced)</option>
-                <option value="git-base">🔬 GIT Base (Microsoft)</option>
+                <option value="clip-openai">🎯 CLIP (OpenAI ViT-B/32)</option>
+                <option value="clip-openclip-laion">🧠 OpenCLIP (LAION ViT-B/32)</option>
               </select>
             </div>
             <div class="field-row" style="flex-direction:column; align-items:flex-start; margin-bottom:0;">

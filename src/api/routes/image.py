@@ -6,9 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
-from src.services.vision import vision_service
 from src.services.clip import clip_service
-from src.services.hashtag import caption_to_hashtags
 from src.core.config import config
 from src.schemas.response import TagResponse
 
@@ -18,25 +16,19 @@ router = APIRouter(prefix="/tag-image", tags=["image"])
 def _process_image_bytes(image_bytes: bytes, model_key: str, num_tags: int,
                         custom_keywords: list, mode: str) -> dict:
     start_time = time.time()
-    caption = ""
-    tags = []
     style = ""
     color = ""
     clip_hashtags = []
 
-    if mode in ("vision", "both"):
-        caption = vision_service.generate_caption(image_bytes, model_key=model_key)
-        tags = caption_to_hashtags(caption, num_tags=num_tags, custom_keywords=custom_keywords)
-
-    if mode in ("clip", "both"):
-        style, color, clip_hashtags = clip_service.predict(image_bytes, num_tags=num_tags)
+    # Chỉ dùng CLIP cho việc phân loại style, color, object, mood, gender
+    style, color, clip_hashtags = clip_service.predict(image_bytes, num_tags=num_tags)
 
     duration = time.time() - start_time
-    print(f"Image processed in {duration:.3f}s [model={model_key}, mode={mode}]")
+    print(f"Image processed in {duration:.3f}s [model={model_key}, mode=clip]")
 
     return {
-        "caption": caption,
-        "tags": tags,
+        "caption": "",
+        "tags": [],
         "style": style,
         "color": color,
         "clip_hashtags": clip_hashtags
@@ -52,13 +44,35 @@ def parse_num_tags(value: Any, default: int) -> int:
         return default
 
 
+@router.post("/load-model")
+async def load_model(model: str = Form(None)) -> dict:
+    req_start = time.time()
+
+    loop = asyncio.get_event_loop()
+    try:
+        await loop.run_in_executor(None, clip_service.load)
+    except Exception as e:
+        duration = time.time() - req_start
+        print(f"-> [Endpoint /tag-image/load-model] Failed after {duration:.3f}s: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to load model: {str(e)}")
+
+    duration = time.time() - req_start
+    print(f"-> [Endpoint /tag-image/load-model] Model ready in {duration:.3f}s (model={model})")
+
+    return {
+        "status": "ok",
+        "model": model,
+        "duration": duration,
+    }
+
+
 @router.post("", response_model=TagResponse)
 async def tag_image(
     file: Annotated[UploadFile, File(description="Image to analyze")],
     num_tags: Any = Form(None),
     model: str = Form(None),
-    custom_vocabulary: str = Form(None, description="Comma-separated list of custom categories"),
-    mode: str = Form("both", description="Mode: clip, vision, or both"),
+    custom_vocabulary: str = Form(None, description="(Unused in CLIP-only mode)"),
+    mode: str = Form("clip", description="Mode: clip"),
 ):
     req_start = time.time()
 
@@ -96,7 +110,7 @@ async def tag_image_from_url(
     num_tags: Any = Form(None),
     model: str = Form(None),
     custom_vocabulary: str = Form(None),
-    mode: str = Form("both", description="Mode: clip, vision, or both"),
+    mode: str = Form("clip", description="Mode: clip"),
 ):
     req_start = time.time()
 
@@ -147,7 +161,7 @@ async def tag_images_from_urls(
     model: str = Form(None),
     threads: int = Form(4, ge=1, le=32, description="Number of concurrent threads"),
     custom_vocabulary: str = Form(None),
-    mode: str = Form("both", description="Mode: clip, vision, or both"),
+    mode: str = Form("clip", description="Mode: clip"),
 ):
     req_start = time.time()
 

@@ -13,8 +13,6 @@ STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from src.services.vision import vision_service
-    vision_service.load()
     yield
 
 

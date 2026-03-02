@@ -8,6 +8,10 @@
 
 async function runAll() {
     console.log("runAll start. state.running:", state.running);
+    if (!state.modelReady) {
+        showToast("Model chưa sẵn sàng", "Đang tải model, vui lòng đợi model load xong trước khi chạy.", "warning");
+        return;
+    }
     // Lấy các task chưa xử lý (pending) hoặc đã lỗi (error) để chạy lại
     const pendingFiles = state.files
         .map((obj, i) => ({ type: "file", obj, index: i }))
@@ -109,6 +113,10 @@ async function runAll() {
 async function runSingleTask(type, index) {
     if (state.running) {
         showToast("Đang bận", "Vui lòng chờ quá trình hiện tại kết thúc.", "warning");
+        return;
+    }
+    if (!state.modelReady) {
+        showToast("Model chưa sẵn sàng", "Đang tải model, vui lòng đợi model load xong trước khi chạy.", "warning");
         return;
     }
     const obj = type === "file" ? state.files[index] : state.urls[index];

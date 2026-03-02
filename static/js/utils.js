@@ -7,9 +7,8 @@ function formatSize(bytes) {
 
 function getModelDisplayName(modelKey) {
   const modelNames = {
-    "vit-gpt2": "ViT-GPT2",
-    "blip-base": "BLIP",
-    "git-base": "GIT"
+    "clip-openai": "CLIP (OpenAI)",
+    "clip-openclip-laion": "OpenCLIP (LAION)"
   };
   return modelNames[modelKey] || modelKey;
 }
@@ -50,7 +49,7 @@ function setRunning(running, finishedMessage = null) {
   state.running = running;
   const hasItems = (state.files && state.files.length > 0) || (state.urls && state.urls.length > 0);
 
-  if (runButton) runButton.disabled = running || !hasItems;
+  if (runButton) runButton.disabled = running || !hasItems || !state.modelReady;
   if (clearButton) clearButton.disabled = running;
   if (exportDropdownButton) exportDropdownButton.disabled = running;
   if (threadsInput) threadsInput.disabled = running;

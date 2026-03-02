@@ -44,6 +44,59 @@ async function fetchAPI(endpoint, form) {
   }
 }
 
+async function loadModelOnServer(modelKey) {
+  const form = new FormData();
+  if (modelKey) {
+    form.append("model", modelKey);
+  }
+  return await fetchAPI("/tag-image/load-model", form);
+}
+
+async function prepareModel(modelKey) {
+  const key = modelKey || state.model || (modelSelect ? modelSelect.value : "clip-openai");
+
+  if (state.modelLoading) {
+    return;
+  }
+
+  state.modelLoading = true;
+  state.modelReady = false;
+
+  const modelName = getModelDisplayName(key);
+
+  if (statusDot) statusDot.className = "status-dot status-dot--ok";
+  if (statusText) statusText.innerHTML = `Đang tải model <strong>${modelName}</strong>...`;
+  if (runButton) runButton.disabled = true;
+
+  const result = await loadModelOnServer(key);
+
+  state.modelLoading = false;
+
+  if (!result.ok) {
+    const msgs = getErrorMessages(result.errorCode || "network", result.errorText || "", "file");
+    state.modelReady = false;
+    if (statusDot) statusDot.className = "status-dot";
+    if (statusText) statusText.innerHTML = "Lỗi load model. Vui lòng thử lại hoặc kiểm tra server.";
+    showToast("Lỗi load model", msgs.tags, "error", 6000);
+    return;
+  }
+
+  state.modelReady = true;
+  state.model = key;
+
+  if (statusDot) statusDot.className = "status-dot status-dot--ok";
+  if (statusText) statusText.innerHTML = `Model <strong>${modelName}</strong> đã sẵn sàng. Hãy thêm ảnh rồi bấm &quot;Chạy hashtag&quot;.`;
+
+  showToast("Model đã sẵn sàng", `Đã load xong model ${modelName}.`, "success", 4000);
+  updateSummary();
+}
+
+async function initializeDefaultModel() {
+  const initialKey = state.model || (modelSelect ? modelSelect.value : "clip-openai");
+  console.log("Initializing default model:", initialKey);
+  await prepareModel(initialKey);
+}
+
 // ── runForFile ────────────────────────────────────────────────────
 
 async function runForFile(fileObj, index, customVocab) {

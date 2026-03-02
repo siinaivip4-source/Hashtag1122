@@ -134,29 +134,35 @@ numTagsInput.addEventListener("change", () => {
 });
 */
 
-modelSelect.addEventListener("change", () => {
-  state.model = modelSelect.value;
-  state.files.forEach((f) => {
-    f.model = state.model;
+if (modelSelect) {
+  modelSelect.addEventListener("change", async () => {
+    if (state.running || state.modelLoading) return;
+    state.model = modelSelect.value;
+    state.files.forEach((f) => {
+      f.model = state.model;
+    });
+    state.urls.forEach((u) => {
+      u.model = state.model;
+    });
+    updateSummary();
+    refreshGallery();
+    await prepareModel(state.model);
   });
-  state.urls.forEach((u) => {
-    u.model = state.model;
-  });
-  updateSummary();
-  refreshGallery();
-});
+}
 
-modeSelect.addEventListener("change", () => {
-  state.mode = modeSelect.value;
-  state.files.forEach((f) => {
-    f.mode = state.mode;
+if (modeSelect) {
+  modeSelect.addEventListener("change", () => {
+    state.mode = modeSelect.value;
+    state.files.forEach((f) => {
+      f.mode = state.mode;
+    });
+    state.urls.forEach((u) => {
+      u.mode = state.mode;
+    });
+    updateSummary();
+    refreshGallery();
   });
-  state.urls.forEach((u) => {
-    u.mode = state.mode;
-  });
-  updateSummary();
-  refreshGallery();
-});
+}
 
 startIndexInput.addEventListener("change", () => {
   let v = parseInt(startIndexInput.value, 10);
@@ -189,5 +195,5 @@ langToggle.addEventListener("click", (e) => {
   }
 });
 */
-
 updateSummary();
+initializeDefaultModel();
