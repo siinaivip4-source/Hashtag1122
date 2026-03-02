@@ -150,3 +150,40 @@ function refreshGallery() {
   copyAllButton.disabled = !(state.files.some(f => f.tags && f.tags.length) || state.urls.some(u => u.tags && u.tags.length));
 }
 
+/**
+ * Hiển thị thông báo toast.
+ * @param {string} title Tiêu đề
+ * @param {string} message Nội dung
+ * @param {'success'|'error'|'warning'} type Loại thông báo
+ * @param {number} duration Thời gian hiển thị (ms)
+ */
+function showToast(title, message, type = "success", duration = 4000) {
+  const container = document.getElementById("toastContainer");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast--${type}`;
+
+  const icon = type === "success" ? "✓" : type === "error" ? "✕" : "⚠";
+
+  toast.innerHTML = `
+    <div class="toast-icon">${icon}</div>
+    <div class="toast-content">
+      <div class="toast-title">${title}</div>
+      <div class="toast-message">${message}</div>
+    </div>
+  `;
+
+  container.appendChild(toast);
+
+  // Tự động xóa sau duration
+  setTimeout(() => {
+    toast.classList.add("toast--exit");
+    setTimeout(() => {
+      if (toast.parentElement) {
+        container.removeChild(toast);
+      }
+    }, 300);
+  }, duration);
+}
+

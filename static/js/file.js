@@ -69,6 +69,7 @@ async function addFiles(fileList) {
     gallery.appendChild(item);
   }
   updateSummary();
+  if (arr.length > 0) showToast("Đã thêm ảnh", `Đã thêm ${arr.length} ảnh.`, "success");
   runButton.disabled = !(state.files.length > 0 || state.urls.length > 0);
 }
 
@@ -148,6 +149,6 @@ function addUrls(urlList) {
     gallery.appendChild(item);
   });
   updateSummary();
+  if (urlList.length > 0) showToast("Đã thêm URL", `Đã thêm ${urlList.length} URL.`, "success");
   runButton.disabled = !(state.files.length > 0 || state.urls.length > 0);
 }
-

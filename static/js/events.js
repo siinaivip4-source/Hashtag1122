@@ -57,6 +57,7 @@ runButton.addEventListener("click", () => {
 
 clearButton.addEventListener("click", () => {
   clearAll();
+  showToast("Đã xóa", "Đã xóa toàn bộ danh sách trong hàng đợi.", "warning");
 });
 
 copyAllButton.addEventListener("click", () => {

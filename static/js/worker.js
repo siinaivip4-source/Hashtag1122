@@ -47,5 +47,14 @@ async function runAll() {
     await Promise.all(workers);
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    setRunning(false, `Đã xử lý xong toàn bộ trong <b>${duration}s</b>. Bạn có thể thêm ảnh mới.`);
+    const finishedMsg = `Đã xử lý xong toàn bộ trong <b>${duration}s</b>. Bạn có thể thêm ảnh mới.`;
+    setRunning(false, finishedMsg);
+
+    // Hiển thị toast kết quả
+    if (state.completed > 0 || state.failed > 0) {
+        const toastType = state.failed === 0 ? "success" : state.completed > 0 ? "warning" : "error";
+        const toastTitle = state.failed === 0 ? "Xử lý thành công" : "Xử lý hoàn tất";
+        const toastMsg = `Thành công: <b>${state.completed}</b>, Thất bại: <b>${state.failed}</b>.`;
+        showToast(toastTitle, toastMsg, toastType, 5000);
+    }
 }
