@@ -853,6 +853,77 @@ input[type="file"] {
   box-shadow: 0 0 5px rgba(34, 211, 238, 0.5);
 }
 
+/* Item Actions */
+.item-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 40;
+}
+
+.item-actions .btn-delete-single {
+  width: 26px;
+  height: 26px;
+  border-radius: 0 12px 0 12px;
+  /* Match card top-right corner */
+  opacity: 0;
+  transform: translate(5px, -5px);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: var(--danger);
+  border: none;
+  box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.3);
+  font-size: 11px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.item:hover .item-actions .btn-delete-single {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+/* Item Action Button Base */
+.item-action-btn {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(15, 18, 38, 0.8);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* In footer */
+.item-footer .btn-run-single {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+  color: #c4b5fd;
+  z-index: 5;
+  position: relative;
+}
+
+.item-action-btn:hover {
+  transform: scale(1.1);
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+}
+
+.btn-delete-single:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.4);
+}
+
 /* Body */
 .item-body {
   padding: 12px 14px;

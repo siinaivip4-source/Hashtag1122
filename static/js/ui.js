@@ -2,6 +2,7 @@ function createItem(fileObj, index) {
   const item = document.createElement("div");
   item.className = "item";
   item.dataset.index = index;
+  item.dataset.id = fileObj._id;
   item.dataset.type = "file";
   item.dataset.model = fileObj.model || state.model;
 
@@ -13,6 +14,13 @@ function createItem(fileObj, index) {
   img.src = fileObj.previewUrl || "";
   img.loading = "lazy";
   img.decoding = "async";
+
+  // Actions overlay
+  const actions = document.createElement("div");
+  actions.className = "item-actions";
+  actions.innerHTML = `
+    <button type="button" class="item-action-btn btn-delete-single" title="Xóa">✕</button>
+  `;
 
   const label = document.createElement("div");
   label.className = "item-thumb-label";
@@ -52,7 +60,7 @@ function createItem(fileObj, index) {
   footer.className = "item-footer";
   footer.innerHTML = `
     <span class="item-footer-meta">Chưa xử lý</span>
-    <button type="button" class="item-copy-btn" disabled>Sao chép</button>
+    <button type="button" class="item-action-btn btn-run-single" title="Xử lý ảnh này">▶</button>
   `;
 
   body.appendChild(rowTop);
@@ -61,6 +69,28 @@ function createItem(fileObj, index) {
 
   item.appendChild(thumb);
   item.appendChild(body);
+  item.appendChild(actions);
+
+  // Restore state if already processed
+  if (fileObj.status === "done") {
+    const els = getItemEls(item);
+    renderResult({
+      obj: fileObj,
+      stateKey: "files",
+      index: index,
+      tags: fileObj.tags || [],
+      style: fileObj.style,
+      color: fileObj.color,
+      tagsEl: els.tagsEl,
+      footerMeta: els.footerMeta,
+      copyBtn: els.copyBtn,
+      statusText: els.statusText
+    });
+    els.statusDot.className = "item-status-dot item-status-dot--ok";
+  } else if (fileObj.status === "error") {
+    const els = getItemEls(item);
+    setItemError(fileObj, els, "Thất bại", fileObj.error || "Lỗi không xác định", "Xử lý lỗi");
+  }
 
   return item;
 }
@@ -69,6 +99,7 @@ function createUrlItem(urlObj, index) {
   const item = document.createElement("div");
   item.className = "item";
   item.dataset.index = index;
+  item.dataset.id = urlObj._id;
   item.dataset.type = "url";
   item.dataset.model = urlObj.model || state.model;
 
@@ -84,6 +115,13 @@ function createUrlItem(urlObj, index) {
     this.style.display = "none";
     this.parentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6b7280;font-size:11px;">Ảnh không tải được</div>';
   };
+
+  // Actions overlay
+  const actions = document.createElement("div");
+  actions.className = "item-actions";
+  actions.innerHTML = `
+    <button type="button" class="item-action-btn btn-delete-single" title="Xóa">✕</button>
+  `;
 
   const label = document.createElement("div");
   label.className = "item-thumb-label";
@@ -124,7 +162,7 @@ function createUrlItem(urlObj, index) {
   footer.className = "item-footer";
   footer.innerHTML = `
     <span class="item-footer-meta">Chưa xử lý</span>
-    <button type="button" class="item-copy-btn" disabled>Sao chép</button>
+    <button type="button" class="item-action-btn btn-run-single" title="Xử lý ảnh này">▶</button>
   `;
 
   body.appendChild(rowTop);
@@ -133,6 +171,28 @@ function createUrlItem(urlObj, index) {
 
   item.appendChild(thumb);
   item.appendChild(body);
+  item.appendChild(actions);
+
+  // Restore state if already processed
+  if (urlObj.status === "done") {
+    const els = getItemEls(item);
+    renderResult({
+      obj: urlObj,
+      stateKey: "urls",
+      index: index,
+      tags: urlObj.tags || [],
+      style: urlObj.style,
+      color: urlObj.color,
+      tagsEl: els.tagsEl,
+      footerMeta: els.footerMeta,
+      copyBtn: els.copyBtn,
+      statusText: els.statusText
+    });
+    els.statusDot.className = "item-status-dot item-status-dot--ok";
+  } else if (urlObj.status === "error") {
+    const els = getItemEls(item);
+    setItemError(urlObj, els, "Thất bại", urlObj.error || "Lỗi không xác định", "Xử lý lỗi");
+  }
 
   return item;
 }
@@ -192,4 +252,3 @@ function showToast(title, message, type = "success", duration = 4000) {
     }, 300);
   }, duration);
 }
-

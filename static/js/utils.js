@@ -41,37 +41,48 @@ function updateSummary() {
 
 function setRunning(running, finishedMessage = null) {
   state.running = running;
-  const hasItems = state.files.length > 0 || state.urls.length > 0;
-  runButton.disabled = running || !hasItems;
-  clearButton.disabled = running;
-  copyAllButton.disabled = running || !(state.files.some(f => f.tags && f.tags.length) || state.urls.some(u => u.tags && u.tags.length));
-  exportJsonButton.disabled = running;
-  exportExcelButton.disabled = running;
-  threadsInput.disabled = running;
-  customVocabInput.disabled = running;
-  modelSelect.disabled = running;
-  modeSelect.disabled = running;
-  fileInput.disabled = running;
-  urlInput.disabled = running;
-  modeFileBtn.disabled = running;
-  modeUrlBtn.disabled = running;
+  const hasItems = (state.files && state.files.length > 0) || (state.urls && state.urls.length > 0);
+
+  if (runButton) runButton.disabled = running || !hasItems;
+  if (clearButton) clearButton.disabled = running;
+  if (copyAllButton) {
+    const canCopy = (state.files && state.files.some(f => f.tags && f.tags.length)) ||
+      (state.urls && state.urls.some(u => u.tags && u.tags.length));
+    copyAllButton.disabled = running || !canCopy;
+  }
+  if (exportJsonButton) exportJsonButton.disabled = running;
+  if (exportExcelButton) exportExcelButton.disabled = running;
+  if (threadsInput) threadsInput.disabled = running;
+  if (customVocabInput) customVocabInput.disabled = running;
+  if (modelSelect) modelSelect.disabled = running;
+  if (modeSelect) modeSelect.disabled = running;
+  if (fileInput) fileInput.disabled = running;
+  if (urlInput) urlInput.disabled = running;
+  if (modeFileBtn) modeFileBtn.disabled = running;
+  if (modeUrlBtn) modeUrlBtn.disabled = running;
 
   if (stopButton) {
     stopButton.style.display = running ? "inline-flex" : "none";
     stopButton.disabled = !running;
   }
 
-  if (running) {
-    statusDot.className = "status-dot status-dot--ok";
-    statusText.innerHTML = "Đang chạy hashtag cho các ảnh đã chọn...";
-  } else {
-    if (!state.files.length && !state.urls.length) {
-      statusDot.className = "status-dot";
-      statusText.innerHTML = "Sẵn sàng (Done).";
-    } else {
+  if (statusDot && statusText) {
+    if (running) {
       statusDot.className = "status-dot status-dot--ok";
-      statusText.innerHTML = finishedMessage || "Đã xử lý xong. Bạn có thể thêm ảnh mới.";
+      statusText.innerHTML = "Đang chạy hashtag cho các ảnh đã chọn...";
+    } else {
+      if (!totalItems()) {
+        statusDot.className = "status-dot";
+        statusText.innerHTML = "Sẵn sàng (Done).";
+      } else {
+        statusDot.className = "status-dot status-dot--ok";
+        statusText.innerHTML = finishedMessage || "Đã xử lý xong. Bạn có thể thêm ảnh mới.";
+      }
     }
   }
+}
+
+function totalItems() {
+  return (state.files ? state.files.length : 0) + (state.urls ? state.urls.length : 0);
 }
 

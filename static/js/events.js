@@ -61,9 +61,19 @@ stopButton.addEventListener("click", () => {
   stopButton.disabled = true;
 });
 
-clearButton.addEventListener("click", () => {
-  clearAll();
-  showToast("Đã xóa", "Đã xóa toàn bộ danh sách trong hàng đợi.", "warning");
+// Event delegation for item actions
+gallery.addEventListener("click", (e) => {
+  const item = e.target.closest(".item");
+  if (!item) return;
+
+  const type = item.dataset.type;
+  const index = parseInt(item.dataset.index);
+
+  if (e.target.closest(".btn-run-single")) {
+    runSingleTask(type, index);
+  } else if (e.target.closest(".btn-delete-single")) {
+    deleteTask(type, index);
+  }
 });
 
 copyAllButton.addEventListener("click", () => {

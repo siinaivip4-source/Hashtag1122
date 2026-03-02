@@ -151,22 +151,23 @@ function renderResult({ obj, stateKey, index, tags, style, color, tagsEl, footer
 
         tagsEl.appendChild(metaRow);
 
-        footerMeta.textContent = `5 phân loại`;
+        footerMeta.textContent = `Phân loại xong`;
         footerMeta.style.color = "";
-        copyBtn.disabled = false;
 
-        copyBtn.onclick = () => {
-            // Chỉ copy những tag khác "None" và thêm dấu #
-            const hashTags = obj.selectedTags
-                .filter(t => t && t !== "None")
-                .map(t => (t.startsWith("#") ? t : `#${t.toLowerCase().replace(/\s+/g, '')}`));
+        if (copyBtn) {
+            copyBtn.disabled = false;
+            copyBtn.onclick = () => {
+                const hashTags = obj.selectedTags
+                    .filter(t => t && t !== "None")
+                    .map(t => (t.startsWith("#") ? t : `#${t.toLowerCase().replace(/\s+/g, '')}`));
 
-            const extras = [obj.style, obj.color]
-                .filter(x => x && x !== "None")
-                .map(x => (x.startsWith("#") ? x : `#${x.toLowerCase().replace(/\s+/g, '')}`));
+                const extras = [obj.style, obj.color]
+                    .filter(x => x && x !== "None")
+                    .map(x => (x.startsWith("#") ? x : `#${x.toLowerCase().replace(/\s+/g, '')}`));
 
-            navigator.clipboard.writeText([...hashTags, ...extras].join(" ")).catch(() => { });
-        };
+                navigator.clipboard.writeText([...hashTags, ...extras].join(" ")).catch(() => { });
+            };
+        }
 
     } else {
         const msg = document.createElement("div");
@@ -174,6 +175,6 @@ function renderResult({ obj, stateKey, index, tags, style, color, tagsEl, footer
         msg.textContent = "Không đủ dữ liệu phân loại (Cần Object, Mood, Gender)";
         tagsEl.appendChild(msg);
         footerMeta.textContent = "Lỗi dữ liệu";
-        copyBtn.disabled = true;
+        if (copyBtn) copyBtn.disabled = true;
     }
 }

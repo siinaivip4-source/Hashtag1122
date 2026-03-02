@@ -12,6 +12,31 @@ function clearAll() {
   updateSummary();
 }
 
+function deleteTask(type, index) {
+  if (state.running) {
+    showToast("Đang bận", "Vui lòng dừng quá trình trước khi xóa.", "warning");
+    return;
+  }
+
+  const obj = type === "file" ? state.files[index] : state.urls[index];
+  if (!obj) return;
+
+  // Cập nhật đếm số lượng nếu ảnh đã xử lý
+  if (obj.status === "done") state.completed--;
+  if (obj.status === "error") state.failed--;
+
+  if (type === "file") {
+    if (obj.previewUrl) URL.revokeObjectURL(obj.previewUrl);
+    state.files.splice(index, 1);
+  } else {
+    state.urls.splice(index, 1);
+  }
+
+  refreshGallery();
+  updateSummary();
+  showToast("Đã xóa", "Đã xóa ảnh khỏi danh sách.", "info");
+}
+
 function copyAllHashtags() {
   const allTags = [];
   state.files.forEach((f) => {

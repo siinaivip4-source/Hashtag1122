@@ -67,6 +67,7 @@ async function addFiles(fileList) {
     const thumbUrl = await createThumbnail(file);
 
     const obj = {
+      _id: "idx_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9),
       file,
       status: "pending",
       tags: [],
@@ -86,8 +87,8 @@ async function addFiles(fileList) {
     gallery.appendChild(item);
   }
   updateSummary();
-  if (arr.length > 0) showToast("Đã thêm ảnh", `Đã thêm ${arr.length} ảnh.`, "success");
-  runButton.disabled = !(state.files.length > 0 || state.urls.length > 0);
+  if (fileInput) fileInput.disabled = false;
+  runButton.disabled = !totalItems();
 }
 
 // Drag-over visual feedback
@@ -148,6 +149,7 @@ function addUrls(urlList) {
   urlList.forEach((url) => {
     const newIndex = state.urls.length;
     const obj = {
+      _id: "idx_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9),
       url,
       status: "pending",
       tags: [],

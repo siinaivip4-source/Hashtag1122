@@ -7,20 +7,22 @@
  */
 
 async function runAll() {
-    // Chỉ lấy các task chưa xử lý (status = "pending")
+    console.log("runAll start. state.running:", state.running);
+    // Lấy các task chưa xử lý (pending) hoặc đã lỗi (error) để chạy lại
     const pendingFiles = state.files
         .map((obj, i) => ({ type: "file", obj, index: i }))
-        .filter(task => task.obj.status === "pending");
+        .filter(task => task.obj.status === "pending" || task.obj.status === "error");
 
     const pendingUrls = state.urls
         .map((obj, i) => ({ type: "url", obj, index: i }))
-        .filter(task => task.obj.status === "pending");
+        .filter(task => task.obj.status === "pending" || task.obj.status === "error");
 
     const queue = [...pendingFiles, ...pendingUrls];
+    console.log("Queue size:", queue.length);
 
     if (queue.length === 0 || state.running) {
         if (!state.running && (state.files.length > 0 || state.urls.length > 0)) {
-            showToast("Thông báo", "Tất cả ảnh đã được xử lý xong.", "success");
+            showToast("Thông báo", "Tất cả ảnh đã được xử lý xong (hoặc không có ảnh mới).", "success");
         }
         return;
     }
@@ -31,8 +33,8 @@ async function runAll() {
 
     setRunning(true);
 
-    const concurrency = parseInt(threadsInput.value) || 1;
-    const customVocab = customVocabInput.value.trim();
+    const concurrency = (threadsInput && threadsInput.value) ? parseInt(threadsInput.value) : 1;
+    const customVocab = (customVocabInput && customVocabInput.value) ? customVocabInput.value.trim() : "";
 
     // Worker tiêu thụ hàng đợi
     async function worker() {
@@ -63,26 +65,64 @@ async function runAll() {
     const startTime = Date.now();
 
     // Chạy song song theo số luồng
-    const workers = Array.from({ length: concurrency }, () => worker());
-    await Promise.all(workers);
+    try {
+        const workers = Array.from({ length: concurrency }, () => worker());
+        await Promise.all(workers);
+    } catch (err) {
+        console.error("Critical error in runAll processing:", err);
+    } finally {
+        const isStopped = !state.running;
+        const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+        const finishedMsg = isStopped
+            ? `Đã dừng xử lý sau <b>${duration}s</b>.`
+            : `Đã xử lý xong <b>${sessionCompleted + sessionFailed}</b> ảnh trong <b>${duration}s</b>.`;
 
-    const isStopped = !state.running;
-    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    const finishedMsg = isStopped
-        ? `Đã dừng xử lý sau <b>${duration}s</b>.`
-        : `Đã xử lý xong <b>${sessionCompleted + sessionFailed}</b> ảnh trong <b>${duration}s</b>.`;
+        setRunning(false, finishedMsg);
 
-    setRunning(false, finishedMsg);
+        if (isStopped) {
+            showToast("Đã dừng", "Quá trình xử lý đã được dừng lại.", "warning");
+        }
 
-    if (isStopped) {
-        showToast("Đã dừng", "Quá trình xử lý đã được dừng lại.", "warning");
+        // Hiển thị toast kết quả của đợt chạy này
+        if (sessionCompleted > 0 || sessionFailed > 0) {
+            const toastType = sessionFailed === 0 ? "success" : sessionCompleted > 0 ? "warning" : "error";
+            const toastTitle = sessionFailed === 0 ? "Xử lý thành công" : "Xử lý hoàn tất";
+            const toastMsg = `Thành công: <b>${sessionCompleted}</b>, Thất bại: <b>${sessionFailed}</b>.`;
+            showToast(toastTitle, toastMsg, toastType, 5000);
+        }
+    }
+}
+
+async function runSingleTask(type, index) {
+    if (state.running) {
+        showToast("Đang bận", "Vui lòng chờ quá trình hiện tại kết thúc.", "warning");
+        return;
+    }
+    const obj = type === "file" ? state.files[index] : state.urls[index];
+    if (!obj) {
+        console.error("Single task object not found at index:", index);
+        return;
     }
 
-    // Hiển thị toast kết quả của đợt chạy này
-    if (sessionCompleted > 0 || sessionFailed > 0) {
-        const toastType = sessionFailed === 0 ? "success" : sessionCompleted > 0 ? "warning" : "error";
-        const toastTitle = sessionFailed === 0 ? "Xử lý thành công" : "Xử lý hoàn tất";
-        const toastMsg = `Thành công: <b>${sessionCompleted}</b>, Thất bại: <b>${sessionFailed}</b>.`;
-        showToast(toastTitle, toastMsg, toastType, 5000);
+    // Reset status to allow re-run
+    if (obj.status === "done") {
+        if (state.completed > 0) state.completed--;
     }
+    if (obj.status === "error") {
+        if (state.failed > 0) state.failed--;
+    }
+    obj.status = "pending";
+
+    const customVocab = (customVocabInput && customVocabInput.value) ? customVocabInput.value.trim() : "";
+
+    try {
+        if (type === "file") {
+            await runForFile(obj, index, customVocab);
+        } else {
+            await runForUrl(obj, index, customVocab);
+        }
+    } catch (e) {
+        console.error("Single task execution crashed:", e);
+    }
+    updateSummary();
 }

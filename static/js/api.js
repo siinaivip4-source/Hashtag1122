@@ -28,7 +28,7 @@ function setItemLoading(els, modelName, loadingMsg) {
   statusText.textContent = "Đang xử lý...";
   tagsEl.innerHTML = `<div class="loading-indicator"><span class="loading-spinner"></span> ${loadingMsg} <strong>${modelName}</strong>...</div>`;
   footerMeta.textContent = `Model: ${modelName}`;
-  copyBtn.disabled = true;
+  if (copyBtn) copyBtn.disabled = true;
 }
 
 /** Đặt trạng thái lỗi cho item card. */
@@ -39,6 +39,7 @@ function setItemError(obj, els, statusMsg, tagsMsg, footerMsg) {
   statusText.textContent = statusMsg;
   tagsEl.textContent = tagsMsg;
   footerMeta.textContent = footerMsg;
+  if (els.copyBtn) els.copyBtn.disabled = true;
   state.failed++;
 }
 
@@ -72,7 +73,7 @@ async function fetchAPI(endpoint, form) {
 // ── runForFile ────────────────────────────────────────────────────
 
 async function runForFile(fileObj, index, customVocab) {
-  const item = gallery.querySelector(`.item[data-index="${index}"][data-type="file"]`);
+  const item = gallery.querySelector(`.item[data-id="${fileObj._id}"]`);
   if (!item) return;
 
   const els = getItemEls(item);
@@ -119,7 +120,7 @@ async function runForFile(fileObj, index, customVocab) {
 // ── runForUrl ─────────────────────────────────────────────────────
 
 async function runForUrl(urlObj, index, customVocab) {
-  const item = gallery.querySelector(`.item[data-index="${index}"][data-type="url"]`);
+  const item = gallery.querySelector(`.item[data-id="${urlObj._id}"]`);
   if (!item) return;
 
   const els = getItemEls(item);
