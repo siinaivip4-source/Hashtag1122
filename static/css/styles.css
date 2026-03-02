@@ -1055,9 +1055,8 @@ input[type="file"] {
   padding: 6px 0;
 }
 
-/* Style/Color row có border dưới phân cách */
+/* Style/Color row - simplified */
 .result-badges {
-  border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 2px;
   align-items: flex-end;
 }
