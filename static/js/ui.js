@@ -1,3 +1,38 @@
+/** Lấy các DOM element cần thiết trong một item card. */
+function getItemEls(item) {
+  if (!item) return null;
+  return {
+    statusDot: item.querySelector(".item-status-dot"),
+    statusText: item.querySelector(".item-status-text"),
+    tagsEl: item.querySelector(".item-tags"),
+    footerMeta: item.querySelector(".item-footer-meta"),
+    copyBtn: item.querySelector(".item-copy-btn"),
+  };
+}
+
+/** Đặt trạng thái loading cho item card. */
+function setItemLoading(els, modelName, loadingMsg) {
+  if (!els) return;
+  const { statusDot, statusText, tagsEl, footerMeta, copyBtn } = els;
+  if (statusDot) statusDot.className = "item-status-dot";
+  if (statusText) statusText.textContent = "Đang xử lý...";
+  if (tagsEl) tagsEl.innerHTML = `<div class="loading-indicator"><span class="loading-spinner"></span> ${loadingMsg} <strong>${modelName}</strong>...</div>`;
+  if (footerMeta) footerMeta.textContent = `Model: ${modelName}`;
+  if (copyBtn) copyBtn.disabled = true;
+}
+
+/** Đặt trạng thái lỗi cho item card. */
+function setItemError(obj, els, statusMsg, tagsMsg, footerMsg) {
+  obj.status = "error";
+  if (!els) return;
+  const { statusDot, statusText, tagsEl, footerMeta } = els;
+  if (statusDot) statusDot.className = "item-status-dot";
+  if (statusText) statusText.textContent = statusMsg;
+  if (tagsEl) tagsEl.textContent = tagsMsg;
+  if (footerMeta) footerMeta.textContent = footerMsg;
+  if (els.copyBtn) els.copyBtn.disabled = true;
+}
+
 function createItem(fileObj, index) {
   const item = document.createElement("div");
   item.className = "item";
@@ -90,6 +125,10 @@ function createItem(fileObj, index) {
   } else if (fileObj.status === "error") {
     const els = getItemEls(item);
     setItemError(fileObj, els, "Thất bại", fileObj.error || "Lỗi không xác định", "Xử lý lỗi");
+  } else if (fileObj.status === "processing") {
+    const els = getItemEls(item);
+    const mName = getModelDisplayName(fileObj.model || state.model);
+    setItemLoading(els, mName, "Đang xử lý với");
   }
 
   return item;
@@ -192,6 +231,10 @@ function createUrlItem(urlObj, index) {
   } else if (urlObj.status === "error") {
     const els = getItemEls(item);
     setItemError(urlObj, els, "Thất bại", urlObj.error || "Lỗi không xác định", "Xử lý lỗi");
+  } else if (urlObj.status === "processing") {
+    const els = getItemEls(item);
+    const mName = getModelDisplayName(urlObj.model || state.model);
+    setItemLoading(els, mName, "Đang tải ảnh & xử lý với");
   }
 
   return item;

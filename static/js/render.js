@@ -127,12 +127,14 @@ function renderResult({ obj, stateKey, index, tags, style, color, tagsEl, footer
 
     // tags dự kiến là [Object, Mood, Gender] từ CLIP
     if (tags.length >= 3) {
-        // Kiểm tra tính hợp lệ, nếu không có trong list thì để "None"
-        const finalObj = TAGS_OBJECT.includes(tags[0]) ? tags[0] : "None";
-        const finalMood = TAGS_MOOD.includes(tags[1]) ? tags[1] : "None";
-        const finalGender = TAGS_GENDER.includes(tags[2]) ? tags[2] : "None";
-
-        obj.selectedTags = [finalObj, finalMood, finalGender];
+        // Khởi tạo selectedTags nếu chưa có (lần đầu render)
+        if (!obj.selectedTags) {
+            // Kiểm tra tính hợp lệ, nếu không có trong list thì để "None"
+            const finalObj = TAGS_OBJECT.includes(tags[0]) ? tags[0] : "None";
+            const finalMood = TAGS_MOOD.includes(tags[1]) ? tags[1] : "None";
+            const finalGender = TAGS_GENDER.includes(tags[2]) ? tags[2] : "None";
+            obj.selectedTags = [finalObj, finalMood, finalGender];
+        }
 
         // Dropdown 1: Object
         metaRow.appendChild(createSelectEl(TAGS_OBJECT, obj.selectedTags[0], "Object", val => {

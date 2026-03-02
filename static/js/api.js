@@ -10,36 +10,10 @@ const API_BASE = window.location.origin.replace(":5500", ":8000");
 
 // ── Shared DOM helpers ────────────────────────────────────────────
 
-/** Lấy các DOM element cần thiết trong một item card. */
-function getItemEls(item) {
-  return {
-    statusDot: item.querySelector(".item-status-dot"),
-    statusText: item.querySelector(".item-status-text"),
-    tagsEl: item.querySelector(".item-tags"),
-    footerMeta: item.querySelector(".item-footer-meta"),
-    copyBtn: item.querySelector(".item-copy-btn"),
-  };
-}
-
-/** Đặt trạng thái loading cho item card. */
-function setItemLoading(els, modelName, loadingMsg) {
-  const { statusDot, statusText, tagsEl, footerMeta, copyBtn } = els;
-  statusDot.className = "item-status-dot";
-  statusText.textContent = "Đang xử lý...";
-  tagsEl.innerHTML = `<div class="loading-indicator"><span class="loading-spinner"></span> ${loadingMsg} <strong>${modelName}</strong>...</div>`;
-  footerMeta.textContent = `Model: ${modelName}`;
-  if (copyBtn) copyBtn.disabled = true;
-}
-
 /** Đặt trạng thái lỗi cho item card. */
-function setItemError(obj, els, statusMsg, tagsMsg, footerMsg) {
-  const { statusDot, statusText, tagsEl, footerMeta } = els;
+function setItemErrorState(obj, els, statusMsg, tagsMsg, footerMsg) {
   obj.status = "error";
-  statusDot.className = "item-status-dot";
-  statusText.textContent = statusMsg;
-  tagsEl.textContent = tagsMsg;
-  footerMeta.textContent = footerMsg;
-  if (els.copyBtn) els.copyBtn.disabled = true;
+  setItemError(obj, els, statusMsg, tagsMsg, footerMsg);
   state.failed++;
 }
 
@@ -73,13 +47,16 @@ async function fetchAPI(endpoint, form) {
 // ── runForFile ────────────────────────────────────────────────────
 
 async function runForFile(fileObj, index, customVocab) {
-  const item = gallery.querySelector(`.item[data-id="${fileObj._id}"]`);
-  if (!item) return;
-
-  const els = getItemEls(item);
+  fileObj.status = "processing";
   const modelName = getModelDisplayName(fileObj.model);
 
-  setItemLoading(els, modelName, "Đang xử lý với");
+  const getEls = () => {
+    const item = gallery.querySelector(`.item[data-id="${fileObj._id}"]`);
+    return item ? getItemEls(item) : null;
+  };
+
+  let els = getEls();
+  if (els) setItemLoading(els, modelName, "Đang xử lý với");
 
   // Build form
   const form = new FormData();
@@ -92,27 +69,33 @@ async function runForFile(fileObj, index, customVocab) {
 
   const result = await fetchAPI("/tag-image", form);
 
+  // Refresh els in case gallery was re-rendered
+  els = getEls();
+
   if (!result.ok) {
     const msgs = getErrorMessages(result.errorCode, result.errorText, "file");
-    setItemError(fileObj, els, msgs.status, msgs.tags, msgs.footer);
+    setItemErrorState(fileObj, els, msgs.status, msgs.tags, msgs.footer);
     return;
   }
 
   applyResultToObj(fileObj, result.data);
-  els.statusDot.className = "item-status-dot item-status-dot--ok";
 
-  renderResult({
-    obj: fileObj,
-    stateKey: "files",
-    index,
-    tags: fileObj.tags,
-    style: fileObj.style,
-    color: fileObj.color,
-    tagsEl: els.tagsEl,
-    footerMeta: els.footerMeta,
-    copyBtn: els.copyBtn,
-    statusText: els.statusText,
-  });
+  if (els) {
+    els.statusDot.className = "item-status-dot item-status-dot--ok";
+
+    renderResult({
+      obj: fileObj,
+      stateKey: "files",
+      index,
+      tags: fileObj.tags,
+      style: fileObj.style,
+      color: fileObj.color,
+      tagsEl: els.tagsEl,
+      footerMeta: els.footerMeta,
+      copyBtn: els.copyBtn,
+      statusText: els.statusText,
+    });
+  }
 
   state.completed++;
 }
@@ -120,13 +103,16 @@ async function runForFile(fileObj, index, customVocab) {
 // ── runForUrl ─────────────────────────────────────────────────────
 
 async function runForUrl(urlObj, index, customVocab) {
-  const item = gallery.querySelector(`.item[data-id="${urlObj._id}"]`);
-  if (!item) return;
-
-  const els = getItemEls(item);
+  urlObj.status = "processing";
   const modelName = getModelDisplayName(urlObj.model);
 
-  setItemLoading(els, modelName, "Đang tải ảnh & xử lý với");
+  const getEls = () => {
+    const item = gallery.querySelector(`.item[data-id="${urlObj._id}"]`);
+    return item ? getItemEls(item) : null;
+  };
+
+  let els = getEls();
+  if (els) setItemLoading(els, modelName, "Đang tải ảnh & xử lý với");
 
   // Build form
   const form = new FormData();
@@ -139,27 +125,33 @@ async function runForUrl(urlObj, index, customVocab) {
 
   const result = await fetchAPI("/tag-image/url", form);
 
+  // Refresh els in case gallery was re-rendered
+  els = getEls();
+
   if (!result.ok) {
     const msgs = getErrorMessages(result.errorCode, result.errorText, "url");
-    setItemError(urlObj, els, msgs.status, msgs.tags, msgs.footer);
+    setItemErrorState(urlObj, els, msgs.status, msgs.tags, msgs.footer);
     return;
   }
 
   applyResultToObj(urlObj, result.data);
-  els.statusDot.className = "item-status-dot item-status-dot--ok";
 
-  renderResult({
-    obj: urlObj,
-    stateKey: "urls",
-    index,
-    tags: urlObj.tags,
-    style: urlObj.style,
-    color: urlObj.color,
-    tagsEl: els.tagsEl,
-    footerMeta: els.footerMeta,
-    copyBtn: els.copyBtn,
-    statusText: els.statusText,
-  });
+  if (els) {
+    els.statusDot.className = "item-status-dot item-status-dot--ok";
+
+    renderResult({
+      obj: urlObj,
+      stateKey: "urls",
+      index,
+      tags: urlObj.tags,
+      style: urlObj.style,
+      color: urlObj.color,
+      tagsEl: els.tagsEl,
+      footerMeta: els.footerMeta,
+      copyBtn: els.copyBtn,
+      statusText: els.statusText,
+    });
+  }
 
   state.completed++;
 }
