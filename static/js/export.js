@@ -37,18 +37,37 @@ function deleteTask(type, index) {
   showToast("Đã xóa", "Đã xóa ảnh khỏi danh sách.", "info");
 }
 
+function escapeCsvValue(value) {
+  const v = (value || "").toString().replace(/"/g, '""');
+  return `"${v}"`;
+}
 
-function getExportData() {
+function getExportData(hashtagSeparator) {
+  const sep = typeof hashtagSeparator === "string" && hashtagSeparator.length ? hashtagSeparator : " ";
   const data = [];
   let stt = state.startIndex;
 
   const buildHashtags = (obj) => {
-    let t = Array.isArray(obj.selectedTags) ? [...obj.selectedTags] : (Array.isArray(obj.tags) ? [...obj.tags] : []);
-    // Nếu có selectedTags thì đã được lọc/giới hạn sẵn, 
-    // nếu chưa chạy (có .tags nhưng chưa .selectedTags) thì build tạm
-    if (obj.style && obj.style !== "None") t.push(obj.style);
-    if (obj.color && obj.color !== "None") t.push(obj.color);
-    return t.join(" ");
+    const parts = [];
+
+    const style = obj.style && obj.style !== "None" ? obj.style : null;
+    const color = obj.color && obj.color !== "None" ? obj.color : null;
+
+    const baseTags = Array.isArray(obj.selectedTags) && obj.selectedTags.length
+      ? obj.selectedTags
+      : (Array.isArray(obj.tags) ? obj.tags : []);
+
+    const objectTag = baseTags[0];
+    const moodTag = baseTags[1];
+    const genderTag = baseTags[2];
+
+    if (style) parts.push(style);
+    if (color) parts.push(color);
+    if (objectTag && objectTag !== "None") parts.push(objectTag);
+    if (moodTag && moodTag !== "None") parts.push(moodTag);
+    if (genderTag && genderTag !== "None") parts.push(genderTag);
+
+    return parts.join(sep);
   };
 
   state.files.forEach((f) => {
@@ -102,11 +121,11 @@ function exportToExcel() {
   data.forEach(row => {
     const values = [
       row["STT"],
-      `"${(row["Tên file"] || "").replace(/"/g, '""')}"`,
-      `"${(row["Caption"] || "").replace(/"/g, '""')}"`,
-      `"${(row["Style"] || "").replace(/"/g, '""')}"`,
-      `"${(row["Color"] || "").replace(/"/g, '""')}"`,
-      `"${(row["Hashtags"] || "").replace(/"/g, '""')}"`
+      escapeCsvValue(row["Tên file"] || ""),
+      escapeCsvValue(row["Caption"] || ""),
+      escapeCsvValue(row["Style"] || ""),
+      escapeCsvValue(row["Color"] || ""),
+      escapeCsvValue(row["Hashtags"] || "")
     ];
     csv += values.join(",") + "\n";
   });
@@ -116,6 +135,32 @@ function exportToExcel() {
   const a = document.createElement("a");
   a.href = url;
   a.download = "hashtags_export.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportToCsvPipe() {
+  const data = getExportData(",");
+  if (!data.length) return;
+
+  const headers = ["STT", "Tên file", "Hashtag (style,color,object,mood,gender)"];
+  const delimiter = "|";
+  let csv = headers.join(delimiter) + "\n";
+
+  data.forEach(row => {
+    const values = [
+      row["STT"],
+      escapeCsvValue(row["Tên file"] || ""),
+      escapeCsvValue(row["Hashtags"] || "")
+    ];
+    csv += values.join(delimiter) + "\n";
+  });
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "hashtags_export_pipe.csv";
   a.click();
   URL.revokeObjectURL(url);
 }

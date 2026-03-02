@@ -52,8 +52,7 @@ function setRunning(running, finishedMessage = null) {
 
   if (runButton) runButton.disabled = running || !hasItems;
   if (clearButton) clearButton.disabled = running;
-  if (exportJsonButton) exportJsonButton.disabled = running;
-  if (exportExcelButton) exportExcelButton.disabled = running;
+  if (exportDropdownButton) exportDropdownButton.disabled = running;
   if (threadsInput) threadsInput.disabled = running;
   if (customVocabInput) customVocabInput.disabled = running;
   if (modelSelect) modelSelect.disabled = running;
