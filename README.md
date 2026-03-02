@@ -4,17 +4,16 @@ FastAPI-based image tagging service that generates hashtags, captions, style, an
 
 ## Features
 
-- **Image Captioning**: Generate captions using ViT-GPT2, BLIP, or GIT models
-- **CLIP Classification**: Predict image style and dominant colors
-- **Hashtag Generation**: Auto-generate relevant hashtags from captions or CLIP predictions
-- **Batch Processing**: Process multiple images from URLs
-- **Web Interface**: Built-in UI for testing and batch uploads
+- **CLIP Classification**: Predict image style, color, object, mood, and gender
+- **Hashtag Generation**: Auto-generate relevant hashtags from CLIP predictions
+- **Batch Processing**: Process multiple images from URLs with concurrent threads
+- **Web Interface**: Built-in UI for testing and uploads
 
 ## Requirements
 
 - Python 3.10+
 - 8GB+ RAM recommended
-- GPU recommended for faster processing (CUDA)
+- GPU recommended for faster processing (CUDA) - currently runs on CPU
 
 ## Installation
 
@@ -42,13 +41,6 @@ app:
   port: 8000
   reload: true
 
-model:
-  default: "vit-gpt2"
-  available:
-    vit-gpt2: "nlpconnect/vit-gpt2-image-captioning"
-    blip-base: "Salesforce/blip-image-captioning-base"
-    git-base: "microsoft/git-base"
-
 processing:
   max_length: 32
   num_beams: 4
@@ -60,6 +52,12 @@ processing:
 
 ```bash
 python main.py
+```
+
+Or with uvicorn:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 API runs at `http://localhost:8000`
@@ -77,29 +75,21 @@ Generate hashtags from an uploaded image.
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | file | File | Image file (required) |
-| num_tags | int | Number of hashtags (default: 10) |
-| model | string | Model: `vit-gpt2`, `blip-base`, `git-base` |
-| custom_vocabulary | string | Comma-separated custom keywords |
-| mode | string | `clip`, `vision`, or `both` (default: `both`) |
 
 **Example using curl:**
 
 ```bash
 curl -X POST http://localhost:8000/tag-image \
-  -F "file=@image.jpg" \
-  -F "num_tags=10" \
-  -F "mode=both"
+  -F "file=@image.jpg"
 ```
 
 **Response:**
 
 ```json
 {
-  "tags": ["#photography", "#nature", "#travel"],
-  "caption": "A beautiful landscape with mountains",
   "style": "Realism",
   "color": "Blue",
-  "clip_hashtags": ["#photography", "#nature", "#landscape"]
+  "clip_hashtags": ["anime", "Happy", "Boy"]
 }
 ```
 
@@ -109,8 +99,7 @@ Generate hashtags from an image URL.
 
 ```bash
 curl -X POST http://localhost:8000/tag-image/url \
-  -F "url=https://example.com/image.jpg" \
-  -F "num_tags=10"
+  -F "url=https://example.com/image.jpg"
 ```
 
 ### POST /tag-image/urls-batch
@@ -124,19 +113,159 @@ curl -X POST http://localhost:8000/tag-image/urls-batch \
   -F "threads=4"
 ```
 
-## Modes
+### POST /tag-image/load-model
 
-- **vision**: Uses image captioning models to generate caption, then extracts hashtags from caption
-- **clip**: Uses CLIP model to predict style, color, and generate hashtags
-- **both**: Returns results from both modes
+Pre-load the CLIP model.
 
-## Supported Styles (CLIP)
+```bash
+curl -X POST http://localhost:8000/tag-image/load-model
+```
+
+## Processing Flow
+
+### CLIP Mode Flow
+
+```
+┌─────────────────┐
+│  Upload Image  │
+│ (file/URL/batch)│
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Validate Image │
+│  (content-type)│
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Load CLIP     │
+│    Model       │──── First request only
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Preprocess     │
+│   Image        │
+│ (PIL, RGB)     │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Extract Image   │
+│  Features       │
+│ (CLIP ViT-B/32) │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Compute        │
+│ Similarity     │
+│ (Image vs Text)│
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    │         │
+    ▼         ▼
+┌───────┐ ┌───────┐
+│ Style │ │ Color │
+│ Top 1 │ │ Top 1 │
+└───┬───┘ └───┬───┘
+    │         │
+    └────┬────┘
+         │
+         ▼
+┌─────────────────┐
+│  Predict       │
+│ Object/Mood/   │
+│   Gender       │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Return        │
+│  Hashtags     │
+│ [obj,mood,gen] │
+└─────────────────┘
+```
+
+### Detailed Processing Steps
+
+1. **Image Input**: Accept image via file upload, URL, or batch URLs
+2. **Validation**: Check content-type is image/*, verify non-empty
+3. **Model Loading**: Load `openai/clip-vit-base-patch32` on first request (lazy loading)
+4. **Preprocessing**: Convert image to PIL Image, ensure RGB mode
+5. **Feature Extraction**: 
+   - Extract image features using CLIP vision encoder
+   - Extract text features from predefined prompts
+6. **Similarity Calculation**: 
+   - Compute cosine similarity between image and text embeddings
+   - Apply softmax with temperature=0.01 (multiply by 100)
+7. **Prediction**:
+   - **Style**: 18 categories (2D, 3D, Animeart, Realism, etc.)
+   - **Color**: 23 categories (Black, White, Blue, Green, etc.)
+   - **Object**: ~400+ tags (sports, anime, nature, vehicles, etc.)
+   - **Mood**: 6 categories (Happy, Sad, Lonely, Chill, Funny, None)
+   - **Gender**: 6 categories (Boy, Girl, Man, Woman, Couple, None)
+8. **Response**: Return style, color, and hashtags (object, mood, gender)
+
+### Supported Categories
+
+#### Styles (18)
 
 2D, 3D, Cute, Animeart, Realism, Aesthetic, Cool, Fantasy, Comic, Horror, Cyberpunk, Lofi, Minimalism, Digitalart, Cinematic, Pixelart, Scifi, Vangoghart
 
-## Supported Colors
+#### Colors (23)
 
 Black, White, Blackandwhite, Red, Yellow, Blue, Green, Pink, Orange, Pastel, Hologram, Vintage, Colorful, Neutral, Light, Dark, Warm, Cold, Neon, Gradient, Purple, Brown, Grey
+
+#### Object Tags (400+)
+
+Categories include: Sports, Animals, Universe, Games, Films, Cartoons, Anime, Humans, Nature, Vehicles, Abstract, Love, Food, Religion, Holiday, Quotes, Scenery, Seasons, Memes, and more.
+
+#### Mood (6)
+
+Happy, Sad, Lonely, Chill, Funny, None
+
+#### Gender (6)
+
+Boy, Girl, Man, Woman, Couple, None
+
+## Architecture
+
+```
+main.py
+├── FastAPI app
+├── CORS middleware
+└── Static files mount
+    │
+    ├── src/api/routes/
+    │   ├── image.py      # Main image processing endpoints
+    │   └── health.py     # Health check
+    │
+    ├── src/services/
+    │   └── clip.py       # CLIP model service
+    │
+    ├── src/core/
+    │   └── config.py     # Configuration loader
+    │
+    └── src/schemas/
+        └── response.py   # Pydantic response models
+```
+
+## Development
+
+```bash
+# Run tests
+pytest
+
+# Run linting
+flake8 .
+
+# Format code
+black .
+isort .
+```
 
 ## License
 

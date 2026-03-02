@@ -22,10 +22,6 @@ class Config:
         return self._config.get("app", {})
 
     @property
-    def model(self) -> dict:
-        return self._config.get("model", {})
-
-    @property
     def processing(self) -> dict:
         return self._config.get("processing", {})
 
@@ -42,33 +38,8 @@ class Config:
         return self.app.get("reload", False)
 
     @property
-    def default_model_name(self) -> str:
-        return self.model.get("default", "vit-gpt2")
-
-    @property
-    def available_models(self) -> dict:
-        return self.model.get("available", {
-            "vit-gpt2": "nlpconnect/vit-gpt2-image-captioning"
-        })
-
-    def get_model_path(self, model_key: str) -> str:
-        return self.available_models.get(model_key)
-
-    @property
     def max_length(self) -> int:
         return self.processing.get("max_length", 32)
-
-    @property
-    def num_beams(self) -> int:
-        return self.processing.get("num_beams", 4)
-
-    @property
-    def default_num_tags(self) -> int:
-        return self.processing.get("default_num_tags", 5)
-
-    @property
-    def max_num_tags(self) -> int:
-        return self.processing.get("max_num_tags", 50)
 
 
 config = Config()

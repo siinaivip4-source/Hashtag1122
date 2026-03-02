@@ -38,7 +38,6 @@ async function runAll() {
     setRunning(true);
 
     const concurrency = (threadsInput && threadsInput.value) ? parseInt(threadsInput.value) : 1;
-    const customVocab = (customVocabInput && customVocabInput.value) ? customVocabInput.value.trim() : "";
 
     // Worker tiêu thụ hàng đợi
     async function worker() {
@@ -51,9 +50,9 @@ async function runAll() {
 
             try {
                 if (task.type === "file") {
-                    await runForFile(task.obj, task.index, customVocab);
+                    await runForFile(task.obj, task.index);
                 } else {
-                    await runForUrl(task.obj, task.index, customVocab);
+                    await runForUrl(task.obj, task.index);
                 }
 
                 // Kiểm tra xem task vừa rồi thành công hay thất bại
@@ -134,13 +133,12 @@ async function runSingleTask(type, index) {
     }
     obj.status = "pending";
 
-    const customVocab = (customVocabInput && customVocabInput.value) ? customVocabInput.value.trim() : "";
 
     try {
         if (type === "file") {
-            await runForFile(obj, index, customVocab);
+            await runForFile(obj, index);
         } else {
-            await runForUrl(obj, index, customVocab);
+            await runForUrl(obj, index);
         }
     } catch (e) {
         console.error("Single task execution crashed:", e);

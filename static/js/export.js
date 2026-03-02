@@ -75,7 +75,6 @@ function getExportData(hashtagSeparator) {
       data.push({
         "STT": stt++,
         "Tên file": f.file.name,
-        "Caption": f.caption || "",
         "Style": f.style || "",
         "Color": f.color || "",
         "Hashtags": buildHashtags(f)
@@ -87,7 +86,6 @@ function getExportData(hashtagSeparator) {
       data.push({
         "STT": stt++,
         "Tên file": u.url,
-        "Caption": u.caption || "",
         "Style": u.style || "",
         "Color": u.color || "",
         "Hashtags": buildHashtags(u)
@@ -115,14 +113,13 @@ function exportToExcel() {
   const data = getExportData();
   if (!data.length) return;
 
-  const headers = ["STT", "Tên file", "Caption", "Style", "Color", "Hashtags"];
+  const headers = ["STT", "Tên file", "Style", "Color", "Hashtags"];
   let csv = headers.join(",") + "\n";
 
   data.forEach(row => {
     const values = [
       row["STT"],
       escapeCsvValue(row["Tên file"] || ""),
-      escapeCsvValue(row["Caption"] || ""),
       escapeCsvValue(row["Style"] || ""),
       escapeCsvValue(row["Color"] || ""),
       escapeCsvValue(row["Hashtags"] || "")

@@ -13,55 +13,43 @@ from src.schemas.response import TagResponse
 router = APIRouter(prefix="/tag-image", tags=["image"])
 
 
-def _process_image_bytes(image_bytes: bytes, model_key: str, num_tags: int,
-                        custom_keywords: list, mode: str) -> dict:
+def _process_image_bytes(image_bytes: bytes, model_key: str = "clip-openai") -> dict:
     start_time = time.time()
-    style = ""
-    color = ""
-    clip_hashtags = []
-
+    
     # Chỉ dùng CLIP cho việc phân loại style, color, object, mood, gender
-    style, color, clip_hashtags = clip_service.predict(image_bytes, num_tags=num_tags)
+    style, color, clip_hashtags = clip_service.predict(image_bytes, model_key=model_key)
 
     duration = time.time() - start_time
-    print(f"Image processed in {duration:.3f}s [model={model_key}, mode=clip]")
+    print(f"Image processed in {duration:.3f}s [model={model_key}]")
 
     return {
-        "caption": "",
-        "tags": [],
         "style": style,
         "color": color,
         "clip_hashtags": clip_hashtags
     }
 
 
-def parse_num_tags(value: Any, default: int) -> int:
-    if value is None:
-        return default
-    try:
-        return int(float(value))
-    except (ValueError, TypeError):
-        return default
 
 
 @router.post("/load-model")
-async def load_model(model: str = Form(None)) -> dict:
+async def load_model(
+    model: Annotated[Optional[str], Form(description="Model key to load")] = "clip-openai",
+) -> dict:
     req_start = time.time()
 
     loop = asyncio.get_event_loop()
     try:
-        await loop.run_in_executor(None, clip_service.load)
+        await loop.run_in_executor(None, partial(clip_service.load, model_key=model))
     except Exception as e:
         duration = time.time() - req_start
         print(f"-> [Endpoint /tag-image/load-model] Failed after {duration:.3f}s: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to load model: {str(e)}")
 
     duration = time.time() - req_start
-    print(f"-> [Endpoint /tag-image/load-model] Model ready in {duration:.3f}s (model={model})")
+    print(f"-> [Endpoint /tag-image/load-model] Model ready in {duration:.3f}s")
 
     return {
         "status": "ok",
-        "model": model,
         "duration": duration,
     }
 
@@ -69,15 +57,9 @@ async def load_model(model: str = Form(None)) -> dict:
 @router.post("", response_model=TagResponse)
 async def tag_image(
     file: Annotated[UploadFile, File(description="Image to analyze")],
-    num_tags: Any = Form(None),
-    model: str = Form(None),
-    custom_vocabulary: str = Form(None, description="(Unused in CLIP-only mode)"),
-    mode: str = Form("clip", description="Mode: clip"),
+    model: Annotated[Optional[str], Form(description="Model key to use")] = "clip-openai",
 ):
     req_start = time.time()
-
-    num_tags = parse_num_tags(num_tags, config.default_num_tags)
-    custom_keywords = [k.strip() for k in custom_vocabulary.split(",")] if custom_vocabulary else None
 
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File is not an image")
@@ -89,15 +71,13 @@ async def tag_image(
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(
         None,
-        partial(_process_image_bytes, image_bytes, model, num_tags, custom_keywords, mode)
+        partial(_process_image_bytes, image_bytes, model_key=model)
     )
 
     duration = time.time() - req_start
-    print(f"-> [Endpoint /tag-image] Total request time: {duration:.3f}s")
+    print(f"-> [Endpoint /tag-image] Total request time: {duration:.3f}s (model={model})")
 
     return TagResponse(
-        tags=result["tags"],
-        caption=result["caption"],
         style=result["style"],
         color=result["color"],
         clip_hashtags=result["clip_hashtags"]
@@ -107,21 +87,16 @@ async def tag_image(
 @router.post("/url", response_model=TagResponse)
 async def tag_image_from_url(
     url: Annotated[str, Form(description="Image URL to analyze")],
-    num_tags: Any = Form(None),
-    model: str = Form(None),
-    custom_vocabulary: str = Form(None),
-    mode: str = Form("clip", description="Mode: clip"),
+    model: Annotated[Optional[str], Form(description="Model key to use")] = "clip-openai",
 ):
     req_start = time.time()
-
-    num_tags = parse_num_tags(num_tags, config.default_num_tags)
-    custom_keywords = [k.strip() for k in custom_vocabulary.split(",")] if custom_vocabulary else None
 
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
         async with httpx.AsyncClient(timeout=30.0, headers=headers) as client:
+            # check the response
             response = await client.get(url, follow_redirects=True)
             response.raise_for_status()
             content_type = response.headers.get("content-type", "")
@@ -139,15 +114,13 @@ async def tag_image_from_url(
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(
         None,
-        partial(_process_image_bytes, image_bytes, model, num_tags, custom_keywords, mode)
+        partial(_process_image_bytes, image_bytes, model_key=model)
     )
 
     duration = time.time() - req_start
     print(f"-> [Endpoint /tag-image/url] Total request time: {duration:.3f}s")
 
     return TagResponse(
-        tags=result["tags"],
-        caption=result["caption"],
         style=result["style"],
         color=result["color"],
         clip_hashtags=result["clip_hashtags"]
@@ -157,16 +130,10 @@ async def tag_image_from_url(
 @router.post("/urls-batch")
 async def tag_images_from_urls(
     urls: Annotated[List[str], Form(description="List of image URLs to analyze")],
-    num_tags: Any = Form(None),
-    model: str = Form(None),
+    model: Annotated[Optional[str], Form(description="Model key to use")] = "clip-openai",
     threads: int = Form(4, ge=1, le=32, description="Number of concurrent threads"),
-    custom_vocabulary: str = Form(None),
-    mode: str = Form("clip", description="Mode: clip"),
 ):
     req_start = time.time()
-
-    num_tags = parse_num_tags(num_tags, config.default_num_tags)
-    custom_keywords = [k.strip() for k in custom_vocabulary.split(",")] if custom_vocabulary else None
 
     if not urls:
         raise HTTPException(status_code=400, detail="No URLs provided")
@@ -194,14 +161,12 @@ async def tag_images_from_urls(
 
             result = await loop.run_in_executor(
                 executor,
-                partial(_process_image_bytes, image_bytes, model, num_tags, custom_keywords, mode)
+                partial(_process_image_bytes, image_bytes, model_key=model)
             )
 
             return {
                 "url": url,
                 "status": "success",
-                "tags": result["tags"],
-                "caption": result["caption"],
                 "style": result["style"],
                 "color": result["color"],
                 "clip_hashtags": result["clip_hashtags"]

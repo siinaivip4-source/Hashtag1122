@@ -24,7 +24,6 @@
           <div class="title-content">
             <div class="title-main">
               HashTag AI
-              <span class="pill">Multi-Model</span>
             </div>
             <div class="title-sub"></div>
           </div>
@@ -40,14 +39,14 @@
             <div class="card-title">
               <div class="card-title-icon">⚙</div>
               Cấu hình
-              <span id="summaryText">Cả 2 · vit-gpt2</span>
+              <span id="summaryText">CLIP (v1.0)</span>
             </div>
             <div class="card-actions">
             </div>
           </div>
 
           <!-- Vocab -->
-    
+
 
           <!-- Threads & (legacy) Mode Row -->
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
@@ -59,7 +58,14 @@
               </div>
               <div class="field-hint">Tăng tốc khi nhiều ảnh.</div>
             </div>
-            
+            <div class="field-row" style="flex-direction:column; align-items:flex-start; margin-bottom:0;">
+              <label>Dọn dẹp</label>
+              <button id="clearButton" class="btn btn-sm btn-ghost-muted" type="button"
+                style="margin-top:5px; width:100%; justify-content:center;">
+                🗑 Xóa toàn bộ ảnh
+              </button>
+              <div class="field-hint">Xóa hàng chờ và kết quả.</div>
+            </div>
           </div>
 
           <!-- Model & Start Index Row -->

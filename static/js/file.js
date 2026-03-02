@@ -71,15 +71,10 @@ async function addFiles(fileList) {
       file,
       status: "pending",
       tags: [],
-      caption: "",
       style: "",
       color: "",
       error: null,
       previewUrl: thumbUrl,
-      lang: state.lang,
-      numTags: state.numTags,
-      model: state.model,
-      mode: state.mode
     };
     state.files.push(obj);
   }
@@ -151,14 +146,9 @@ function addUrls(urlList) {
       url,
       status: "pending",
       tags: [],
-      caption: "",
       style: "",
       color: "",
       error: null,
-      lang: state.lang,
-      numTags: state.numTags,
-      model: state.model,
-      mode: state.mode
     };
     state.urls.push(obj);
   });

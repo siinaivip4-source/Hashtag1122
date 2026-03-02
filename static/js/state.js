@@ -1,8 +1,6 @@
 var state = {
   files: [],
   urls: [],
-  lang: "en",
-  numTags: 10,
   model: "clip-openai",
   mode: "clip",
   running: false,

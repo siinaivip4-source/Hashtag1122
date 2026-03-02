@@ -100,22 +100,21 @@ COLOR_PROMPT_MAP = {
 class ClipService:
     def __init__(self):
         self.device = "cpu"
-        self.model = None
-        self.processor = None
-        self.s_feat = None
-        self.c_feat = None
-        self.obj_feat = None
-        self.mood_feat = None
-        self.gender_feat = None
-        self._loaded = False
+        self.loaded_models = {}
+        self.model_map = {
+            "clip-openai": "openai/clip-vit-base-patch32",
+            "clip-openclip-laion": "laion/CLIP-ViT-B-32-laion2B-s34B-b79K"
+        }
 
-    def load(self):
-        if self._loaded:
+    def load(self, model_key: str = "clip-openai"):
+        if model_key in self.loaded_models:
             return
         
-        print("Loading CLIP model via transformers...")
-        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(self.device)
-        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        repo_id = self.model_map.get(model_key, "openai/clip-vit-base-patch32")
+        print(f"Loading CLIP model '{model_key}' ({repo_id}) via transformers...")
+        
+        model = CLIPModel.from_pretrained(repo_id).to(self.device)
+        processor = CLIPProcessor.from_pretrained(repo_id)
         
         s_prompts = [STYLE_PROMPT_MAP.get(s, f"a {s} style artwork") for s in STYLES]
         c_prompts = [COLOR_PROMPT_MAP.get(c, f"dominant color is {c}") for c in COLORS]
@@ -125,45 +124,57 @@ class ClipService:
         gender_prompts = [f"a photo of a {tag.lower()}" for tag in TAGS_GENDER]
         
         with torch.no_grad():
-            s_inputs = self.processor(text=s_prompts, return_tensors="pt", padding=True).to(self.device)
-            c_inputs = self.processor(text=c_prompts, return_tensors="pt", padding=True).to(self.device)
-            obj_inputs = self.processor(text=obj_prompts, return_tensors="pt", padding=True).to(self.device)
-            mood_inputs = self.processor(text=mood_prompts, return_tensors="pt", padding=True).to(self.device)
-            gender_inputs = self.processor(text=gender_prompts, return_tensors="pt", padding=True).to(self.device)
+            s_inputs = processor(text=s_prompts, return_tensors="pt", padding=True).to(self.device)
+            c_inputs = processor(text=c_prompts, return_tensors="pt", padding=True).to(self.device)
+            obj_inputs = processor(text=obj_prompts, return_tensors="pt", padding=True).to(self.device)
+            mood_inputs = processor(text=mood_prompts, return_tensors="pt", padding=True).to(self.device)
+            gender_inputs = processor(text=gender_prompts, return_tensors="pt", padding=True).to(self.device)
 
-            self.s_feat = self.model.get_text_features(**s_inputs)
-            self.c_feat = self.model.get_text_features(**c_inputs)
-            self.obj_feat = self.model.get_text_features(**obj_inputs)
-            self.mood_feat = self.model.get_text_features(**mood_inputs)
-            self.gender_feat = self.model.get_text_features(**gender_inputs)
+            s_feat = model.get_text_features(**s_inputs)
+            c_feat = model.get_text_features(**c_inputs)
+            obj_feat = model.get_text_features(**obj_inputs)
+            mood_feat = model.get_text_features(**mood_inputs)
+            gender_feat = model.get_text_features(**gender_inputs)
 
-            self.s_feat /= self.s_feat.norm(dim=-1, keepdim=True)
-            self.c_feat /= self.c_feat.norm(dim=-1, keepdim=True)
-            self.obj_feat /= self.obj_feat.norm(dim=-1, keepdim=True)
-            self.mood_feat /= self.mood_feat.norm(dim=-1, keepdim=True)
-            self.gender_feat /= self.gender_feat.norm(dim=-1, keepdim=True)
+            s_feat /= s_feat.norm(dim=-1, keepdim=True)
+            c_feat /= c_feat.norm(dim=-1, keepdim=True)
+            obj_feat /= obj_feat.norm(dim=-1, keepdim=True)
+            mood_feat /= mood_feat.norm(dim=-1, keepdim=True)
+            gender_feat /= gender_feat.norm(dim=-1, keepdim=True)
         
-        self._loaded = True
-        print("CLIP model loaded successfully")
+        self.loaded_models[model_key] = {
+            "model": model,
+            "processor": processor,
+            "s_feat": s_feat,
+            "c_feat": c_feat,
+            "obj_feat": obj_feat,
+            "mood_feat": mood_feat,
+            "gender_feat": gender_feat
+        }
+        print(f"CLIP model '{model_key}' loaded successfully")
 
-    def predict(self, image_bytes: bytes, num_tags: int = 5) -> tuple[str, str, list[str]]:
-        self.load()
+    def predict(self, image_bytes: bytes, model_key: str = "clip-openai") -> tuple[str, str, list[str]]:
+        self.load(model_key)
+        
+        m_data = self.loaded_models[model_key]
+        model = m_data["model"]
+        processor = m_data["processor"]
         
         image = Image.open(BytesIO(image_bytes))
         if image.mode != "RGB":
             image = image.convert("RGB")
         
         with torch.no_grad():
-            inputs = self.processor(images=image, return_tensors="pt").to(self.device)
-            img_feat = self.model.get_image_features(**inputs)
+            inputs = processor(images=image, return_tensors="pt").to(self.device)
+            img_feat = model.get_image_features(**inputs)
             img_feat /= img_feat.norm(dim=-1, keepdim=True)
             
-        s_probs = (100.0 * img_feat @ self.s_feat.T).softmax(dim=-1)
-        c_probs = (100.0 * img_feat @ self.c_feat.T).softmax(dim=-1)
+        s_probs = (100.0 * img_feat @ m_data["s_feat"].T).softmax(dim=-1)
+        c_probs = (100.0 * img_feat @ m_data["c_feat"].T).softmax(dim=-1)
         
-        obj_probs = (100.0 * img_feat @ self.obj_feat.T).softmax(dim=-1)
-        mood_probs = (100.0 * img_feat @ self.mood_feat.T).softmax(dim=-1)
-        gender_probs = (100.0 * img_feat @ self.gender_feat.T).softmax(dim=-1)
+        obj_probs = (100.0 * img_feat @ m_data["obj_feat"].T).softmax(dim=-1)
+        mood_probs = (100.0 * img_feat @ m_data["mood_feat"].T).softmax(dim=-1)
+        gender_probs = (100.0 * img_feat @ m_data["gender_feat"].T).softmax(dim=-1)
         
         s_idx = s_probs.argmax().item()
         c_idx = c_probs.argmax().item()

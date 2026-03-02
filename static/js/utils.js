@@ -10,22 +10,16 @@ function getModelDisplayName(modelKey) {
     "clip-openai": "CLIP (OpenAI)",
     "clip-openclip-laion": "OpenCLIP (LAION)"
   };
-  return modelNames[modelKey] || modelKey;
+  return modelNames[modelKey] || modelKey || "CLIP (OpenAI)";
 }
 
-function getModeDisplayName(mode) {
-  const modeNames = {
-    "both": "Cả 2",
-    "clip": "CLIP",
-    "vision": "Vision"
-  };
-  return modeNames[mode] || mode;
+function getModeDisplayName() {
+  return "Hashtag extraction";
 }
 
 function updateSummary() {
-  const modeDisplay = getModeDisplayName(state.mode);
   const modelDisplay = getModelDisplayName(state.model);
-  summaryText.textContent = `${modeDisplay} · ${modelDisplay}`;
+  summaryText.textContent = modelDisplay;
   const total = state.files.length + state.urls.length;
   resultSummary.textContent = `${total} ảnh · ${state.completed} xong · ${state.failed} lỗi`;
 
@@ -55,7 +49,6 @@ function setRunning(running, finishedMessage = null) {
   if (threadsInput) threadsInput.disabled = running;
   if (customVocabInput) customVocabInput.disabled = running;
   if (modelSelect) modelSelect.disabled = running;
-  if (modeSelect) modeSelect.disabled = running;
   if (fileInput) fileInput.disabled = running;
   if (urlInput) urlInput.disabled = running;
   if (modeFileBtn) modeFileBtn.disabled = running;

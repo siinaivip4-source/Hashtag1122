@@ -59,6 +59,17 @@ retryAllButton.addEventListener("click", () => {
   retryAll();
 });
 
+if (clearButton) {
+  clearButton.addEventListener("click", () => {
+    if (state.running) {
+      showToast("Đang bận", "Vui lòng dừng quá trình trước khi xóa.", "warning");
+      return;
+    }
+    clearAll();
+    showToast("Đã xóa hết", "Toàn bộ ảnh trong danh sách đã được xóa.", "info");
+  });
+}
+
 stopButton.addEventListener("click", () => {
   state.running = false;
   statusText.innerHTML = "Đang dừng... Đợi các luồng hiện tại hoàn tất.";
@@ -112,58 +123,6 @@ if (exportDropdownButton && exportDropdownMenu) {
   });
 }
 
-/*
-numTagsInput.addEventListener("change", () => {
-  let v = parseInt(numTagsInput.value, 10);
-  if (isNaN(v) || v < 1) v = 1;
-  if (v > 50) v = 50;
-  numTagsInput.value = v;
-  state.numTags = v;
-  state.files.forEach((f) => {
-    if (f.status === "pending") {
-      f.numTags = v;
-    }
-  });
-  state.urls.forEach((u) => {
-    if (u.status === "pending") {
-      u.numTags = v;
-    }
-  });
-  updateSummary();
-  refreshGallery();
-});
-*/
-
-if (modelSelect) {
-  modelSelect.addEventListener("change", async () => {
-    if (state.running || state.modelLoading) return;
-    state.model = modelSelect.value;
-    state.files.forEach((f) => {
-      f.model = state.model;
-    });
-    state.urls.forEach((u) => {
-      u.model = state.model;
-    });
-    updateSummary();
-    refreshGallery();
-    await prepareModel(state.model);
-  });
-}
-
-if (modeSelect) {
-  modeSelect.addEventListener("change", () => {
-    state.mode = modeSelect.value;
-    state.files.forEach((f) => {
-      f.mode = state.mode;
-    });
-    state.urls.forEach((u) => {
-      u.mode = state.mode;
-    });
-    updateSummary();
-    refreshGallery();
-  });
-}
-
 startIndexInput.addEventListener("change", () => {
   let v = parseInt(startIndexInput.value, 10);
   if (isNaN(v) || v < 1) v = 1;
@@ -172,28 +131,19 @@ startIndexInput.addEventListener("change", () => {
   refreshGallery();
 });
 
-/*
-langToggle.addEventListener("click", (e) => {
-  if (e.target.matches("button[data-lang]")) {
-    const lang = e.target.getAttribute("data-lang");
-    state.lang = lang;
-    Array.from(langToggle.querySelectorAll("button")).forEach((btn) => {
-      btn.classList.toggle("toggle--active", btn === e.target);
-    });
-    state.files.forEach((f) => {
-      if (f.status === "pending") {
-        f.lang = lang;
-      }
-    });
-    state.urls.forEach((u) => {
-      if (u.status === "pending") {
-        u.lang = lang;
-      }
-    });
-    updateSummary();
-    refreshGallery();
+modelSelect.addEventListener("change", () => {
+  if (state.running) {
+    showToast("Đang bận", "Vui lòng dừng quá trình trước khi đổi model.", "warning");
+    modelSelect.value = state.model;
+    return;
   }
+  const key = modelSelect.value;
+  prepareModel(key);
+
+  // Cập nhật model cho các task chưa chạy (tùy chọn, tùy logic bạn muốn)
+  state.files.forEach(f => { if (f.status === "pending") f.model = key; });
+  state.urls.forEach(u => { if (u.status === "pending") u.model = key; });
+  refreshGallery();
 });
-*/
 updateSummary();
 initializeDefaultModel();

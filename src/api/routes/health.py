@@ -10,6 +10,5 @@ router = APIRouter(prefix="/health", tags=["health"])
 async def health_check():
     return {
         "status": "ok",
-        "model_backend": "local_hf_image_caption",
-        "vision_model_name": config.vision_model_name,
+        "model_backend": "local_hf_clip",
     }

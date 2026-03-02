@@ -503,6 +503,19 @@ header {
   filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.3));
 }
 
+.btn-ghost-muted {
+  background: rgba(148, 163, 184, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: var(--text-secondary);
+}
+
+.btn-ghost-muted:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+}
+
 /* ═══════════════════════════════════════════════
    TOGGLE (Mode switch)
 ═══════════════════════════════════════════════ */

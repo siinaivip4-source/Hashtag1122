@@ -99,9 +99,9 @@ async function initializeDefaultModel() {
 
 // ── runForFile ────────────────────────────────────────────────────
 
-async function runForFile(fileObj, index, customVocab) {
+async function runForFile(fileObj, index) {
   fileObj.status = "processing";
-  const modelName = getModelDisplayName(fileObj.model);
+  const modelName = getModelDisplayName(fileObj.model || state.model);
 
   const getEls = () => {
     const item = gallery.querySelector(`.item[data-id="${fileObj._id}"]`);
@@ -109,17 +109,12 @@ async function runForFile(fileObj, index, customVocab) {
   };
 
   let els = getEls();
-  if (els) setItemLoading(els, modelName, "Đang xử lý với");
+  if (els) setItemLoading(els, modelName, "Đang xử lý...");
 
   // Build form
   const form = new FormData();
   form.append("file", fileObj.file);
-  form.append("num_tags", fileObj.numTags);
-  form.append("language", fileObj.lang);
-  form.append("model", fileObj.model);
-  form.append("mode", fileObj.mode || state.mode);
-  if (customVocab) form.append("custom_vocabulary", customVocab);
-
+  form.append("model", fileObj.model || state.model);
   const result = await fetchAPI("/tag-image", form);
 
   // Refresh els in case gallery was re-rendered
@@ -155,27 +150,21 @@ async function runForFile(fileObj, index, customVocab) {
 
 // ── runForUrl ─────────────────────────────────────────────────────
 
-async function runForUrl(urlObj, index, customVocab) {
+async function runForUrl(urlObj, index) {
   urlObj.status = "processing";
-  const modelName = getModelDisplayName(urlObj.model);
-
+  const modelName = getModelDisplayName(urlObj.model || state.model);
   const getEls = () => {
     const item = gallery.querySelector(`.item[data-id="${urlObj._id}"]`);
     return item ? getItemEls(item) : null;
   };
 
   let els = getEls();
-  if (els) setItemLoading(els, modelName, "Đang tải ảnh & xử lý với");
+  if (els) setItemLoading(els, modelName, "Đang tải ảnh & xử lý...");
 
   // Build form
   const form = new FormData();
   form.append("url", urlObj.url);
-  form.append("num_tags", urlObj.numTags);
-  form.append("language", urlObj.lang);
-  form.append("model", urlObj.model);
-  form.append("mode", urlObj.mode || state.mode);
-  if (customVocab) form.append("custom_vocabulary", customVocab);
-
+  form.append("model", urlObj.model || state.model);
   const result = await fetchAPI("/tag-image/url", form);
 
   // Refresh els in case gallery was re-rendered
@@ -217,10 +206,9 @@ function applyResultToObj(obj, data) {
   if (Array.isArray(data.clip_hashtags) && data.clip_hashtags.length > 0) {
     obj.tags = data.clip_hashtags;
   } else {
-    obj.tags = Array.isArray(data.tags) ? data.tags : [];
+    obj.tags = [];
   }
 
-  obj.caption = data.caption || "";
   obj.style = data.style || "";
   obj.color = data.color || "";
   obj.status = "done";
