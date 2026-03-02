@@ -37,21 +37,6 @@ function deleteTask(type, index) {
   showToast("Đã xóa", "Đã xóa ảnh khỏi danh sách.", "info");
 }
 
-function copyAllHashtags() {
-  const allTags = [];
-  state.files.forEach((f) => {
-    if (Array.isArray(f.selectedTags) && f.selectedTags.length) {
-      allTags.push(...f.selectedTags);
-    }
-  });
-  state.urls.forEach((u) => {
-    if (Array.isArray(u.selectedTags) && u.selectedTags.length) {
-      allTags.push(...u.selectedTags);
-    }
-  });
-  if (!allTags.length) return;
-  navigator.clipboard.writeText(allTags.join(" ")).catch(() => { });
-}
 
 function getExportData() {
   const data = [];

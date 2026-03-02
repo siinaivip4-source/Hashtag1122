@@ -18,7 +18,6 @@ var runButton = document.getElementById("runButton");
 var stopButton = document.getElementById("stopButton");
 var retryAllButton = document.getElementById("retryAllButton");
 var clearButton = document.getElementById("clearButton");
-var copyAllButton = document.getElementById("copyAllButton");
 var exportJsonButton = document.getElementById("exportJsonButton");
 var exportExcelButton = document.getElementById("exportExcelButton");
 var threadsInput = document.getElementById("threadsInput");

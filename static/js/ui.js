@@ -250,7 +250,6 @@ function refreshGallery() {
     const item = createUrlItem(urlObj, index);
     gallery.appendChild(item);
   });
-  copyAllButton.disabled = !(state.files.some(f => f.tags && f.tags.length) || state.urls.some(u => u.tags && u.tags.length));
 }
 
 /**

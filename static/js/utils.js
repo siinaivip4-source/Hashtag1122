@@ -52,11 +52,6 @@ function setRunning(running, finishedMessage = null) {
 
   if (runButton) runButton.disabled = running || !hasItems;
   if (clearButton) clearButton.disabled = running;
-  if (copyAllButton) {
-    const canCopy = (state.files && state.files.some(f => f.tags && f.tags.length)) ||
-      (state.urls && state.urls.some(u => u.tags && u.tags.length));
-    copyAllButton.disabled = running || !canCopy;
-  }
   if (exportJsonButton) exportJsonButton.disabled = running;
   if (exportExcelButton) exportExcelButton.disabled = running;
   if (threadsInput) threadsInput.disabled = running;

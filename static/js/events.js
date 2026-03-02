@@ -80,9 +80,6 @@ gallery.addEventListener("click", (e) => {
   }
 });
 
-copyAllButton.addEventListener("click", () => {
-  copyAllHashtags();
-});
 
 exportJsonButton.addEventListener("click", () => {
   exportToJson();
