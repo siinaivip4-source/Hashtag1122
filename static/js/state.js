@@ -15,6 +15,7 @@ var state = {
 var fileInput = document.getElementById("fileInput");
 var folderInput = document.getElementById("folderInput");
 var runButton = document.getElementById("runButton");
+var stopButton = document.getElementById("stopButton");
 var clearButton = document.getElementById("clearButton");
 var copyAllButton = document.getElementById("copyAllButton");
 var exportJsonButton = document.getElementById("exportJsonButton");

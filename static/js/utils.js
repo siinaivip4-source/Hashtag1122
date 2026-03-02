@@ -56,6 +56,11 @@ function setRunning(running, finishedMessage = null) {
   modeFileBtn.disabled = running;
   modeUrlBtn.disabled = running;
 
+  if (stopButton) {
+    stopButton.style.display = running ? "inline-flex" : "none";
+    stopButton.disabled = !running;
+  }
+
   if (running) {
     statusDot.className = "status-dot status-dot--ok";
     statusText.innerHTML = "Đang chạy hashtag cho các ảnh đã chọn...";

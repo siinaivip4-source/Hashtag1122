@@ -55,6 +55,12 @@ runButton.addEventListener("click", () => {
   runAll();
 });
 
+stopButton.addEventListener("click", () => {
+  state.running = false;
+  statusText.innerHTML = "Đang dừng... Đợi các luồng hiện tại hoàn tất.";
+  stopButton.disabled = true;
+});
+
 clearButton.addEventListener("click", () => {
   clearAll();
   showToast("Đã xóa", "Đã xóa toàn bộ danh sách trong hàng đợi.", "warning");

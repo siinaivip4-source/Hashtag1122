@@ -46,9 +46,17 @@ async function runAll() {
     const workers = Array.from({ length: concurrency }, () => worker());
     await Promise.all(workers);
 
+    const isStopped = !state.running;
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    const finishedMsg = `Đã xử lý xong toàn bộ trong <b>${duration}s</b>. Bạn có thể thêm ảnh mới.`;
+    const finishedMsg = isStopped
+        ? `Đã dừng xử lý sau <b>${duration}s</b>.`
+        : `Đã xử lý xong toàn bộ trong <b>${duration}s</b>.`;
+
     setRunning(false, finishedMsg);
+
+    if (isStopped) {
+        showToast("Đã dừng", "Quá trình xử lý đã được dừng lại theo yêu cầu.", "warning");
+    }
 
     // Hiển thị toast kết quả
     if (state.completed > 0 || state.failed > 0) {
