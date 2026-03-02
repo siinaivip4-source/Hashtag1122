@@ -40,6 +40,8 @@ async function runAll() {
     async function worker() {
         while (queue.length > 0 && state.running) {
             const task = queue.shift();
+            if (!task) continue;
+
             const oldFailed = state.failed;
             const oldCompleted = state.completed;
 
@@ -55,10 +57,21 @@ async function runAll() {
                 if (state.failed > oldFailed) sessionFailed++;
 
             } catch (e) {
-                console.error("Task failed:", e);
-                // Trường hợp catch ở đây thường đã được setItemError xử lý bên trong runFor...
+                console.error("Worker task execution error:", e, task);
+                // Đảm bảo task này được đánh dấu lỗi nếu chưa được xử lý
+                if (task.obj.status === "processing") {
+                    task.obj.status = "error";
+                    task.obj.error = String(e);
+                    state.failed++;
+                    sessionFailed++;
+                }
+            } finally {
+                try {
+                    updateSummary();
+                } catch (err) {
+                    console.error("Error updating summary:", err);
+                }
             }
-            updateSummary();
         }
     }
 

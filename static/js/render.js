@@ -109,8 +109,14 @@ function createSelectEl(options, selected, label, onChange) {
  * @param {Element}  params.statusText - .item-status-text
  */
 function renderResult({ obj, stateKey, index, tags, style, color, tagsEl, footerMeta, copyBtn, statusText }) {
-    statusText.textContent = tags.length ? "Đã hoàn thành" : "Không nhận được hashtag";
-    tagsEl.innerHTML = "";
+    if (statusText) {
+        statusText.textContent = tags.length ? "Đã hoàn thành" : "Không nhận được hashtag";
+    }
+    if (tagsEl) {
+        tagsEl.innerHTML = "";
+    } else {
+        return; // Không có chỗ để render kết quả
+    }
 
     // ── Row 1: Style, Color, Object, Mood, Gender ────────────────
     const metaRow = document.createElement("div");
