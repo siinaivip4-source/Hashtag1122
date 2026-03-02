@@ -82,10 +82,8 @@ async function addFiles(fileList) {
       mode: state.mode
     };
     state.files.push(obj);
-
-    const item = createItem(obj, newIndex);
-    gallery.appendChild(item);
   }
+  refreshGallery();
   updateSummary();
   if (fileInput) fileInput.disabled = false;
   runButton.disabled = !totalItems();
@@ -163,10 +161,8 @@ function addUrls(urlList) {
       mode: state.mode
     };
     state.urls.push(obj);
-
-    const item = createUrlItem(obj, newIndex);
-    gallery.appendChild(item);
   });
+  refreshGallery();
   updateSummary();
   if (urlList.length > 0) showToast("Đã thêm URL", `Đã thêm ${urlList.length} URL.`, "success");
   runButton.disabled = !(state.files.length > 0 || state.urls.length > 0);

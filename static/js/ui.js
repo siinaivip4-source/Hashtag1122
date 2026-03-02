@@ -134,7 +134,7 @@ function createItem(fileObj, index) {
   return item;
 }
 
-function createUrlItem(urlObj, index) {
+function createUrlItem(urlObj, index, offset = 0) {
   const item = document.createElement("div");
   item.className = "item";
   item.dataset.index = index;
@@ -184,7 +184,7 @@ function createUrlItem(urlObj, index) {
   rowTop.className = "item-row-top";
   rowTop.innerHTML = `
     <div class="item-meta">
-      <span class="stt-badge">STT: ${state.startIndex + index}</span>
+      <span class="stt-badge">STT: ${state.startIndex + index + offset}</span>
       <span class="model-badge model-badge--${urlObj.model || state.model}">${modelName}</span>
     </div>
     <div class="item-status">
@@ -241,13 +241,15 @@ function createUrlItem(urlObj, index) {
 }
 
 function refreshGallery() {
+  console.log("refreshGallery: files=", state.files.length, "urls=", state.urls.length, "startIndex=", state.startIndex);
   gallery.innerHTML = "";
   state.files.forEach((fileObj, index) => {
     const item = createItem(fileObj, index);
     gallery.appendChild(item);
   });
+  const filesCount = state.files.length;
   state.urls.forEach((urlObj, index) => {
-    const item = createUrlItem(urlObj, index);
+    const item = createUrlItem(urlObj, index, filesCount);
     gallery.appendChild(item);
   });
 }
