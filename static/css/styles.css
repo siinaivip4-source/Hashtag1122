@@ -758,12 +758,14 @@ input[type="file"] {
 
   /* Sử dụng containment cơ bản để tối ưu render mà không gây lag/nhảy khi cuộn */
   contain: layout style paint;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .item:hover {
   border-color: var(--border-accent);
   box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
-  transform: translateY(-2px);
+  transform: translateY(-2px) translateZ(0);
 }
 
 /* Thumbnail */
@@ -772,6 +774,8 @@ input[type="file"] {
   padding-top: 52%;
   background: rgba(15, 18, 38, 0.8);
   overflow: hidden;
+  /* Giảm bớt gánh nặng render */
+  backface-visibility: hidden;
 }
 
 .item-thumb img {
@@ -781,10 +785,11 @@ input[type="file"] {
   height: 100%;
   object-fit: cover;
   transition: transform 0.5s ease;
+  will-change: transform;
 }
 
 .item:hover .item-thumb img {
-  transform: scale(1.03);
+  transform: scale(1.03) translateZ(0);
 }
 
 .item-thumb-label {
@@ -793,9 +798,10 @@ input[type="file"] {
   top: 8px;
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(8, 10, 22, 0.82);
+  background: rgba(8, 10, 22, 0.9);
+  /* Tăng opacity thay vì dùng blur */
   border: 1px solid var(--border-muted);
-  backdrop-filter: blur(8px);
+  /* backdrop-filter: blur(8px); -- Bỏ blur để mượt hơn khi scroll */
   font-size: 10.5px;
   color: var(--text-secondary);
   max-width: calc(100% - 70px);
@@ -816,9 +822,10 @@ input[type="file"] {
   padding: 3px 9px;
   border-radius: 999px;
   font-size: 10.5px;
-  background: rgba(8, 10, 22, 0.82);
+  background: rgba(8, 10, 22, 0.9);
+  /* Tăng opacity thay vì dùng blur */
   border: 1px solid var(--border-muted);
-  backdrop-filter: blur(8px);
+  /* backdrop-filter: blur(8px); -- Bỏ blur để mượt hơn khi scroll */
   color: var(--text-muted);
   display: inline-flex;
   align-items: center;
@@ -1153,6 +1160,7 @@ input[type="file"] {
   border-radius: 50%;
   animation: spin 0.75s linear infinite;
   flex-shrink: 0;
+  will-change: transform;
 }
 
 @keyframes spin {
