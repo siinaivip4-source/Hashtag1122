@@ -167,7 +167,13 @@ async function runForUrl(urlObj, index, customVocab) {
 
 /** Gán data từ API response vào state object. */
 function applyResultToObj(obj, data) {
-  obj.tags = Array.isArray(data.tags) ? data.tags : [];
+  // Ưu tiên clip_hashtags (Object, Mood, Gender) nếu có
+  if (Array.isArray(data.clip_hashtags) && data.clip_hashtags.length > 0) {
+    obj.tags = data.clip_hashtags;
+  } else {
+    obj.tags = Array.isArray(data.tags) ? data.tags : [];
+  }
+
   obj.caption = data.caption || "";
   obj.style = data.style || "";
   obj.color = data.color || "";

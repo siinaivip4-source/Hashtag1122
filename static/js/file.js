@@ -37,8 +37,25 @@ async function createThumbnail(file, maxWidth = 400, maxHeight = 400) {
 }
 
 async function addFiles(fileList) {
-  const arr = Array.from(fileList || []);
+  let arr = Array.from(fileList || []);
   if (!arr.length) return;
+
+  // Logic lọc folder đặc biệt
+  const hasMinThumbnails = arr.some(f => f.webkitRelativePath && f.webkitRelativePath.includes('minthumbnails'));
+  if (hasMinThumbnails) {
+    arr = arr.filter(file => {
+      const path = file.webkitRelativePath;
+      if (!path || !path.includes('minthumbnails')) return false;
+      const parts = path.split('/');
+      const minIdx = parts.indexOf('minthumbnails');
+      // Chỉ lấy ảnh ở level: minthumbnails / [FolderCon1] / [FolderCon2] / [Anh]
+      // Tức là file nằm đúng ở FolderCon2, không đi sâu vào FolderCon2/SubDir/...
+      return parts.length === minIdx + 4;
+    });
+    if (arr.length > 0) {
+      showToast("Chế độ folder", `Phát hiện cấu trúc minthumbnails, đã lọc lấy ${arr.length} ảnh từ các folder con cấp 2.`, "info");
+    }
+  }
 
   clearGalleryEmptyState();
 

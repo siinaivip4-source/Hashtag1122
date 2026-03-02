@@ -18,18 +18,35 @@ COLORS = [
     "Purple", "Brown", "Grey"
 ]
 
-HASHTAGS = [
-    "photography", "photo", "portrait", "landscape", "camera",
-    "lifestyle", "daily", "vibes", "mood", "instagood",
-    "fashion", "style", "ootd", "model", "beauty",
-    "art", "digitalart", "illustration", "drawing", "creative",
-    "travel", "adventure", "explore", "nature", "outdoor",
-    "food", "foodie", "yummy", "delicious", "instafood",
-    "instadaily", "picoftheday", "instagram", "love", "happy",
-    "cute", "beautiful", "summer", "winter", "spring", "autumn",
-    "street", "urban", "city", "night", "sunset", "sunrise",
-    "minimal", "retro", "vintage", "modern"
+TAGS_OBJECT = [
+    "sport", "football", "messi", "lamineyamal", "ronaldo", "mbappe", "flamengo", "sepalmeiras", "sccorinthianspaulista", "juventus", "realmadrid", "dortmund", "chelsea", "intermiami", "neymar", "manchesterunited", "manchestercity", "bayernmunich", "barcelona", "liverpool", "sonheungmin", "atleticomadrid", "arsenal", "cricket", "dhoni", "basketball", "phoenixsuns", "milwaukeebucks", "michaeljordan", "stephencurry", "goldenstatewarriors", "superbowl",
+    "animal", "lion", "wolf", "leopard", "phoenix", "pet", "dog", "cow", "butterfly", "dragon", "cat", "rabbit", "panda", "bear", "hamster", "fish", "bird", "eagle", "tiger", "unicorn", "duck", "peacock", "capybara", "elephant", "pig", "fox", "monkey", "penguins", "squirrel", "horse", "sheep", "camel",
+    "universe", "planet", "astronaut", "galaxy", "spaceship", "aurora",
+    "game", "gamepad", "pubg", "minecraft", "mario", "leagueoflegends", "jinx", "valorant", "mortalkombat", "grandtheftauto", "freefire", "callofduty", "genshinimpact", "halo", "hololive", "hollowknight", "mobilelegends", "arenaofvalor", "naraka",
+    "film", "dc", "batman", "theflash", "superman", "joker", "marvel", "spiderman", "wolverine", "deadpool", "thanos", "blackpanther", "captainmarvel", "ghostrider", "scarletwitch", "thor", "ironman", "venom", "captainamerica", "hulk", "gameofthrones", "wukong", "it", "pennywise", "frankenstein", "zombie", "ghostface", "fridaythe13th", "jasonvoorhees", "theaddamsfamily", "scream", "michaelmyers", "chucky", "dracula", "oppenheimer", "dune", "beetlejuice", "theironclaw", "gundam", "kpopdemonhunter", "lokahchapter1chandra", "strangerthings", "predator", "nowyouseeme", "theboys", "avatar", "godzilla", "kingkong",
+    "cartoon", "theamazingworldofgumball", "gumballwatterson", "darwinwatterson", "familyguy", "petergriffin", "stewiegriffin", "briangriffin", "glennquagmire", "clevelandbrown", "joeswanson", "thesimpsons", "bartsimpson", "natra", "aobing", "disney", "insideout", "coco", "zootopia", "baymax", "spongebob", "peanuts", "bighero6", "tomandjerry", "ben10", "bugsbunny", "stitch", "sonic", "minions", "paddington", "nightmarebeforechristmas", "jackskellington", "howtotrainyourdragon", "kungfupanda", "pocoyo", "metroman", "avatarthelastairbender", "walle", "iceage", "regularshow", "couragethecowardlydog", "adventuretime", "finn", "jake", "marceline", "princessbubblegum", "iceking", "bmo", "gunter", "rickandmorty", "webarebears", "toystory",
+    "anime", "dragonball", "goku", "vegeta", "frieza", "gohan", "piccolo", "trunks", "majinbuu", "onepiece", "luffy", "sanji", "chopper", "ace", "zoro", "animeboy", "animegirl", "jujutsukaisen", "yujiitadori", "ryomensukuna", "megumifushiguro", "tojifushiguro", "getosuguru", "satorugojo", "narutoshippuden", "sasuke", "uzumakinaruto", "sharingan", "itachi", "kakashi", "hinata", "jiraiya", "sakura", "garaa", "madara", "crayonshinchan", "shinchan", "sanrio", "hellokitty", "kuromi", "demonslayer", "tanjirokamado", "nezukokamado", "shinobu", "rengoku", "akaza", "zenitsuagatsuma", "inosukehashibira", "dandadan", "kentakakura", "tsubasajinnouchi", "blackclover", "pokemon", "charmande", "pikachu", "cubone", "bulbasaur", "gengar", "squirtle", "psyduck", "sailormoon", "thegodofhighschool", "jinmori", "sakamotodays", "haikyu", "shoyohinata", "tobiokageyama", "swordartonline", "asuna", "alice", "ghibli", "totoro", "spiritedaway", "ponyo", "bluelock", "kurokonobasket", "darlinginthefranxx", "zerotwo", "myheroacademia", "izuku", "himikotoga", "chainsawman", "denji", "slamdunk", "conan", "doraemon", "sololeveling", "sungjinwoo", "bleach", "ichigokurosaki", "toshirohitsugaya", "shihouinyoruichi", "aizensosuke", "ranma", "worldtrigger", "frieren", "spyxfamily", "loidforger", "anyaforger", "yorforger", "rezero", "ram", "rem", "subaru", "attackontitan", "leviackerman", "erenyeager", "oshinoko", "fullmetalalchemist", "mobpsycho100", "overlord", "fate", "saber", "hunterxhunter",
+    "humans", "kpop", "bigbang", "bts", "blackpink", "celeb", "taylorswift", "pesopluma", "kingvon", "juicewrld", "travisscott", "warrior", "knight", "samurai", "cowboy", "king", "ninja",
+    "nature", "mountain", "beach", "flowers", "sunflower", "peony", "rose", "cherryblossom", "lotus", "waterfall", "ocean", "sky", "disaster", "storm", "landscape", "tree", "leaf", "rain", "moon", "stone", "winter", "snowman", "desert", "summer", "forest",
+    "vehicle", "car", "audi", "porsche", "lamborghini", "ferrari", "mclaren", "bmw", "mercedes", "toyota", "ship", "train", "boat", "motorbike", "formula1racing",
+    "abstract", "pattern", "geometric", "iphonewallpaper", "firework", "brokenscreen", "smoke",
+    "love", "heart", "couple",
+    "fnb", "food", "fruit", "drink",
+    "religion", "god", "cross", "flag", "vietnam", "brazil", "hindugods", "mexico", "zodiac",
+    "holiday", "christmas", "santaclaus", "christmastree", "thanksgiving", "newyear", "valentine", "ramadan", "diwali",
+    "quote", "sadquote", "funnyquote", "lovequote", "lifequote", "motivatequote",
+    "scenery", "city", "village", "architecture", "home", "wonders", "road",
+    "season", "spring", "autumn",
+    "meme", "middlefinger", "67",
+    "warning", "warningsign", "warningtext",
+    "manhua", "tianguancifu",
+    "donghua", "xianni",
+    "manga", "vagabond",
+    "other", "ghost", "sillyface", "glitter", "logo", "emoji", "bt21", "fire", "labubu", "flashlight", "money", "dollars", "yinyang", "doublewallpaper", "crybaby", "twinkletwinkle"
 ]
+
+TAGS_MOOD = ["Happy", "Sad", "Lonely", "Chill", "Funny", "None"]
+TAGS_GENDER = ["Boy", "Girl", "Man", "Woman", "Couple", "None"]
 
 STYLE_PROMPT_MAP = {
     "2D": "flat 2d vector art, simple lines, cartoon illustration, no realistic shading, bold silhouettes, clean outlines, minimalist vector, paper-cut aesthetic, solid color fills",
@@ -87,7 +104,9 @@ class ClipService:
         self.processor = None
         self.s_feat = None
         self.c_feat = None
-        self.h_feat = None
+        self.obj_feat = None
+        self.mood_feat = None
+        self.gender_feat = None
         self._loaded = False
 
     def load(self):
@@ -98,34 +117,31 @@ class ClipService:
         self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(self.device)
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         
-        s_prompts = []
-        for s in STYLES:
-            if s in STYLE_PROMPT_MAP:
-                txt = STYLE_PROMPT_MAP[s]
-            else:
-                txt = f"a {s} style artwork"
-            s_prompts.append(txt)
-
-        c_prompts = []
-        for c in COLORS:
-            if c in COLOR_PROMPT_MAP:
-                txt = COLOR_PROMPT_MAP[c]
-            else:
-                txt = f"dominant color is {c}"
-            c_prompts.append(txt)
+        s_prompts = [STYLE_PROMPT_MAP.get(s, f"a {s} style artwork") for s in STYLES]
+        c_prompts = [COLOR_PROMPT_MAP.get(c, f"dominant color is {c}") for c in COLORS]
         
-        h_prompts = [f"#{tag}" for tag in HASHTAGS]
+        obj_prompts = [f"#{tag}" for tag in TAGS_OBJECT]
+        mood_prompts = [f"feeling {tag.lower()}" for tag in TAGS_MOOD]
+        gender_prompts = [f"a photo of a {tag.lower()}" for tag in TAGS_GENDER]
         
         with torch.no_grad():
             s_inputs = self.processor(text=s_prompts, return_tensors="pt", padding=True).to(self.device)
             c_inputs = self.processor(text=c_prompts, return_tensors="pt", padding=True).to(self.device)
-            h_inputs = self.processor(text=h_prompts, return_tensors="pt", padding=True).to(self.device)
+            obj_inputs = self.processor(text=obj_prompts, return_tensors="pt", padding=True).to(self.device)
+            mood_inputs = self.processor(text=mood_prompts, return_tensors="pt", padding=True).to(self.device)
+            gender_inputs = self.processor(text=gender_prompts, return_tensors="pt", padding=True).to(self.device)
+
             self.s_feat = self.model.get_text_features(**s_inputs)
             self.c_feat = self.model.get_text_features(**c_inputs)
-            self.h_feat = self.model.get_text_features(**h_inputs)
+            self.obj_feat = self.model.get_text_features(**obj_inputs)
+            self.mood_feat = self.model.get_text_features(**mood_inputs)
+            self.gender_feat = self.model.get_text_features(**gender_inputs)
+
             self.s_feat /= self.s_feat.norm(dim=-1, keepdim=True)
             self.c_feat /= self.c_feat.norm(dim=-1, keepdim=True)
-            self.h_feat /= self.h_feat.norm(dim=-1, keepdim=True)
+            self.obj_feat /= self.obj_feat.norm(dim=-1, keepdim=True)
+            self.mood_feat /= self.mood_feat.norm(dim=-1, keepdim=True)
+            self.gender_feat /= self.gender_feat.norm(dim=-1, keepdim=True)
         
         self._loaded = True
         print("CLIP model loaded successfully")
@@ -144,20 +160,26 @@ class ClipService:
             
         s_probs = (100.0 * img_feat @ self.s_feat.T).softmax(dim=-1)
         c_probs = (100.0 * img_feat @ self.c_feat.T).softmax(dim=-1)
-        h_probs = (100.0 * img_feat @ self.h_feat.T).softmax(dim=-1)
+        
+        obj_probs = (100.0 * img_feat @ self.obj_feat.T).softmax(dim=-1)
+        mood_probs = (100.0 * img_feat @ self.mood_feat.T).softmax(dim=-1)
+        gender_probs = (100.0 * img_feat @ self.gender_feat.T).softmax(dim=-1)
         
         s_idx = s_probs.argmax().item()
         c_idx = c_probs.argmax().item()
         
-        top_h_indices = h_probs.topk(num_tags).indices
-        # topk returns shape (1, k) for a single image; convert to a flat Python list
-        if top_h_indices.dim() > 1:
-            top_h_indices = top_h_indices[0]
-        top_h_indices = top_h_indices.tolist()
-        hashtags = [f"#{HASHTAGS[i]}" for i in top_h_indices]
+        obj_idx = obj_probs.argmax().item()
+        mood_idx = mood_probs.argmax().item()
+        gender_idx = gender_probs.argmax().item()
+        
+        # Hashtags list: [Object, Mood, Gender]
+        hashtags = [
+            TAGS_OBJECT[obj_idx],
+            TAGS_MOOD[mood_idx],
+            TAGS_GENDER[gender_idx]
+        ]
         
         image.close()
-        
         return STYLES[s_idx], COLORS[c_idx], hashtags
 
 
