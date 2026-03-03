@@ -1,4 +1,5 @@
 import torch
+import time
 from PIL import Image
 from io import BytesIO
 from transformers import CLIPModel, CLIPProcessor
@@ -97,6 +98,8 @@ COLOR_PROMPT_MAP = {
 }
 
 
+import threading
+
 class ClipService:
     def __init__(self):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -106,93 +109,130 @@ class ClipService:
             "clip-openclip-laion": "laion/CLIP-ViT-B-32-laion2B-s34B-b79K",
             "clip-openclip-vit-h14": "laion/CLIP-ViT-H-14-laion2B-s32B-b79K",
         }
+        self._lock = threading.RLock()
+        self._request_count = 0
 
     def load(self, model_key: str = "clip-openai"):
         if model_key in self.loaded_models:
             return
-        
-        repo_id = self.model_map.get(model_key, "openai/clip-vit-base-patch32")
-        print(f"Loading CLIP model '{model_key}' ({repo_id}) via transformers...")
-        
-        model = CLIPModel.from_pretrained(repo_id).to(self.device)
-        processor = CLIPProcessor.from_pretrained(repo_id)
-        
-        s_prompts = [STYLE_PROMPT_MAP.get(s, f"a {s} style artwork") for s in STYLES]
-        c_prompts = [COLOR_PROMPT_MAP.get(c, f"dominant color is {c}") for c in COLORS]
-        
-        obj_prompts = [f"#{tag}" for tag in TAGS_OBJECT]
-        mood_prompts = [f"feeling {tag.lower()}" for tag in TAGS_MOOD]
-        gender_prompts = [f"a photo of a {tag.lower()}" for tag in TAGS_GENDER]
-        
-        with torch.no_grad():
-            s_inputs = processor(text=s_prompts, return_tensors="pt", padding=True).to(self.device)
-            c_inputs = processor(text=c_prompts, return_tensors="pt", padding=True).to(self.device)
-            obj_inputs = processor(text=obj_prompts, return_tensors="pt", padding=True).to(self.device)
-            mood_inputs = processor(text=mood_prompts, return_tensors="pt", padding=True).to(self.device)
-            gender_inputs = processor(text=gender_prompts, return_tensors="pt", padding=True).to(self.device)
+            
+        with self._lock:
+            if model_key in self.loaded_models:
+                return
+                
+            repo_id = self.model_map.get(model_key, "openai/clip-vit-base-patch32")
+            print(f"Loading CLIP model '{model_key}' ({repo_id}) via transformers...")
+            
+            model = CLIPModel.from_pretrained(repo_id).to(self.device)
+            processor = CLIPProcessor.from_pretrained(repo_id)
+            
+            s_prompts = [STYLE_PROMPT_MAP.get(s, f"a {s} style artwork") for s in STYLES]
+            c_prompts = [COLOR_PROMPT_MAP.get(c, f"dominant color is {c}") for c in COLORS]
+            
+            obj_prompts = [f"#{tag}" for tag in TAGS_OBJECT]
+            mood_prompts = [f"feeling {tag.lower()}" for tag in TAGS_MOOD]
+            gender_prompts = [f"a photo of a {tag.lower()}" for tag in TAGS_GENDER]
+            
+            with torch.no_grad():
+                s_inputs = processor(text=s_prompts, return_tensors="pt", padding=True).to(self.device)
+                c_inputs = processor(text=c_prompts, return_tensors="pt", padding=True).to(self.device)
+                obj_inputs = processor(text=obj_prompts, return_tensors="pt", padding=True).to(self.device)
+                mood_inputs = processor(text=mood_prompts, return_tensors="pt", padding=True).to(self.device)
+                gender_inputs = processor(text=gender_prompts, return_tensors="pt", padding=True).to(self.device)
 
-            s_feat = model.get_text_features(**s_inputs)
-            c_feat = model.get_text_features(**c_inputs)
-            obj_feat = model.get_text_features(**obj_inputs)
-            mood_feat = model.get_text_features(**mood_inputs)
-            gender_feat = model.get_text_features(**gender_inputs)
+                s_feat = model.get_text_features(**s_inputs)
+                c_feat = model.get_text_features(**c_inputs)
+                obj_feat = model.get_text_features(**obj_inputs)
+                mood_feat = model.get_text_features(**mood_inputs)
+                gender_feat = model.get_text_features(**gender_inputs)
 
-            s_feat /= s_feat.norm(dim=-1, keepdim=True)
-            c_feat /= c_feat.norm(dim=-1, keepdim=True)
-            obj_feat /= obj_feat.norm(dim=-1, keepdim=True)
-            mood_feat /= mood_feat.norm(dim=-1, keepdim=True)
-            gender_feat /= gender_feat.norm(dim=-1, keepdim=True)
-        
-        self.loaded_models[model_key] = {
-            "model": model,
-            "processor": processor,
-            "s_feat": s_feat,
-            "c_feat": c_feat,
-            "obj_feat": obj_feat,
-            "mood_feat": mood_feat,
-            "gender_feat": gender_feat
-        }
-        print(f"CLIP model '{model_key}' loaded successfully")
+                s_feat /= s_feat.norm(dim=-1, keepdim=True)
+                c_feat /= c_feat.norm(dim=-1, keepdim=True)
+                obj_feat /= obj_feat.norm(dim=-1, keepdim=True)
+                mood_feat /= mood_feat.norm(dim=-1, keepdim=True)
+                gender_feat /= gender_feat.norm(dim=-1, keepdim=True)
+            
+            self.loaded_models[model_key] = {
+                "model": model,
+                "processor": processor,
+                "s_feat": s_feat,
+                "c_feat": c_feat,
+                "obj_feat": obj_feat,
+                "mood_feat": mood_feat,
+                "gender_feat": gender_feat
+            }
+            print(f"CLIP model '{model_key}' loaded successfully")
 
     def predict(self, image_bytes: bytes, model_key: str = "clip-openai") -> tuple[str, str, list[str]]:
+        self._request_count += 1
+        rid = self._request_count
+        start_all = time.time()
+        print(f"DEBUG [REQ-{rid}] Entered predict", flush=True)
+        
         self.load(model_key)
         
         m_data = self.loaded_models[model_key]
         model = m_data["model"]
         processor = m_data["processor"]
         
-        image = Image.open(BytesIO(image_bytes))
-        if image.mode != "RGB":
-            image = image.convert("RGB")
-        
-        with torch.no_grad():
-            inputs = processor(images=image, return_tensors="pt").to(self.device)
-            img_feat = model.get_image_features(**inputs)
-            img_feat /= img_feat.norm(dim=-1, keepdim=True)
+        image = None
+        try:
+            print(f"DEBUG [REQ-{rid}] Opening image ({len(image_bytes)} bytes)", flush=True)
+            image = Image.open(BytesIO(image_bytes))
+            if image.mode != "RGB":
+                image = image.convert("RGB")
             
-        s_probs = (100.0 * img_feat @ m_data["s_feat"].T).softmax(dim=-1)
-        c_probs = (100.0 * img_feat @ m_data["c_feat"].T).softmax(dim=-1)
-        
-        obj_probs = (100.0 * img_feat @ m_data["obj_feat"].T).softmax(dim=-1)
-        mood_probs = (100.0 * img_feat @ m_data["mood_feat"].T).softmax(dim=-1)
-        gender_probs = (100.0 * img_feat @ m_data["gender_feat"].T).softmax(dim=-1)
-        
-        s_idx = s_probs.argmax().item()
-        c_idx = c_probs.argmax().item()
-        
-        obj_idx = obj_probs.argmax().item()
-        mood_idx = mood_probs.argmax().item()
-        gender_idx = gender_probs.argmax().item()
-        
-        # Hashtags list: [Object, Mood, Gender]
-        hashtags = [
-            TAGS_OBJECT[obj_idx],
-            TAGS_MOOD[mood_idx],
-            TAGS_GENDER[gender_idx]
-        ]
-        
-        image.close()
-        return STYLES[s_idx], COLORS[c_idx], hashtags
+            print(f"DEBUG [REQ-{rid}] Waiting for lock...", flush=True)
+            lock_start = time.time()
+            acquired = self._lock.acquire(timeout=60)
+            if not acquired:
+                print(f"CRITICAL [REQ-{rid}] Lock timeout after 60s!", flush=True)
+                raise Exception("Service Busy: CLIP model lock timeout")
+                
+            try:
+                wait_time = time.time() - lock_start
+                print(f"DEBUG [REQ-{rid}] Lock acquired (waited {wait_time:.3f}s)", flush=True)
+                    
+                inference_start = time.time()
+                with torch.no_grad():
+                    inputs = processor(images=image, return_tensors="pt").to(self.device)
+                    img_feat = model.get_image_features(**inputs)
+                    img_feat /= img_feat.norm(dim=-1, keepdim=True)
+                    
+                s_probs = (100.0 * img_feat @ m_data["s_feat"].T).softmax(dim=-1)
+                c_probs = (100.0 * img_feat @ m_data["c_feat"].T).softmax(dim=-1)
+                obj_probs = (100.0 * img_feat @ m_data["obj_feat"].T).softmax(dim=-1)
+                mood_probs = (100.0 * img_feat @ m_data["mood_feat"].T).softmax(dim=-1)
+                gender_probs = (100.0 * img_feat @ m_data["gender_feat"].T).softmax(dim=-1)
+                
+                s_idx = s_probs.argmax().item()
+                c_idx = c_probs.argmax().item()
+                obj_idx = obj_probs.argmax().item()
+                mood_idx = mood_probs.argmax().item()
+                gender_idx = gender_probs.argmax().item()
+                
+                inference_duration = time.time() - inference_start
+                print(f"DEBUG [REQ-{rid}] Inference done in {inference_duration:.3f}s", flush=True)
+
+                hashtags = [
+                    TAGS_OBJECT[obj_idx],
+                    TAGS_MOOD[mood_idx],
+                    TAGS_GENDER[gender_idx]
+                ]
+                
+                return STYLES[s_idx], COLORS[c_idx], hashtags
+            finally:
+                self._lock.release()
+                print(f"DEBUG [REQ-{rid}] Lock released", flush=True)
+                
+        except Exception as e:
+            print(f"ERROR [REQ-{rid}] Failed: {str(e)}", flush=True)
+            raise e
+        finally:
+            if image:
+                image.close()
+            total_time = time.time() - start_all
+            print(f"DEBUG [REQ-{rid}] Finished total in {total_time:.3f}s", flush=True)
 
 
 clip_service = ClipService()

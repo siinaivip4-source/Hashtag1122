@@ -24,16 +24,33 @@ function setItemErrorState(obj, els, statusMsg, tagsMsg, footerMsg) {
  * @returns {{ ok: boolean, data?: object, errorCode?: string, errorText?: string }}
  */
 async function fetchAPI(endpoint, form) {
+  console.log(`[API] Fetching ${endpoint}...`);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout
+
   let resp;
   try {
-    resp = await fetch(API_BASE + endpoint, { method: "POST", body: form });
+    resp = await fetch(API_BASE + endpoint, {
+      method: "POST",
+      body: form,
+      signal: controller.signal
+    });
   } catch (err) {
+    if (err.name === 'AbortError') {
+      return { ok: false, errorCode: "timeout", errorText: "Yêu cầu quá lâu (120s timeout)" };
+    }
     return { ok: false, errorCode: "network", errorText: String(err) };
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   if (!resp.ok) {
-    const text = await resp.text();
-    return { ok: false, errorCode: `http_${resp.status}`, errorText: text };
+    try {
+      const text = await resp.text();
+      return { ok: false, errorCode: `http_${resp.status}`, errorText: text };
+    } catch (e) {
+      return { ok: false, errorCode: `http_${resp.status}`, errorText: "Lỗi không xác định" };
+    }
   }
 
   try {
@@ -223,6 +240,13 @@ function getErrorMessages(errorCode, errorText, type) {
         ? "Không kết nối được tới API. Kiểm tra server FastAPI và model local."
         : "Không kết nối được tới API.",
       footer: "Lỗi kết nối",
+    };
+  }
+  if (errorCode === "timeout") {
+    return {
+      status: "Timeout",
+      tags: "Hệ thống quá tải hoặc ảnh quá nặng. Bạn có thể thử lại sau.",
+      footer: "Lỗi Timeout",
     };
   }
   if (errorCode.startsWith("http_")) {

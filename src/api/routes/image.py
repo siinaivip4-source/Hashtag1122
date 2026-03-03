@@ -12,6 +12,10 @@ from src.schemas.response import TagResponse
 
 router = APIRouter(prefix="/tag-image", tags=["image"])
 
+# Global executor for AI tasks to control thread count
+# We use a bit more threads to handle I/O (file reading) + Lock queueing
+inference_executor = ThreadPoolExecutor(max_workers=20)
+
 
 def _process_image_bytes(image_bytes: bytes, model_key: str = "clip-openai") -> dict:
     start_time = time.time()
@@ -39,7 +43,7 @@ async def load_model(
 
     loop = asyncio.get_event_loop()
     try:
-        await loop.run_in_executor(None, partial(clip_service.load, model_key=model))
+        await loop.run_in_executor(inference_executor, partial(clip_service.load, model_key=model))
     except Exception as e:
         duration = time.time() - req_start
         print(f"-> [Endpoint /tag-image/load-model] Failed after {duration:.3f}s: {e}")
@@ -61,22 +65,34 @@ async def tag_image(
     model: Annotated[Optional[str], Form(description="Model key to use")] = "clip-openai",
 ):
     req_start = time.time()
+    print(f"-> [Endpoint /tag-image] Incoming request. Filename: {file.filename}, Type: {file.content_type}", flush=True)
 
     if not file.content_type.startswith("image/"):
+        print(f"!! [Endpoint /tag-image] Invalid type: {file.content_type}", flush=True)
         raise HTTPException(status_code=400, detail="File is not an image")
 
-    image_bytes = await file.read()
-    if not image_bytes:
-        raise HTTPException(status_code=400, detail="Empty or unreadable image")
+    try:
+        print(f"-> [Endpoint /tag-image] Reading bytes for {file.filename}...", flush=True)
+        image_bytes = await file.read()
+        print(f"-> [Endpoint /tag-image] Bytes read: {len(image_bytes)} bytes", flush=True)
+        
+        if not image_bytes:
+            print("!! [Endpoint /tag-image] Buffer empty", flush=True)
+            raise HTTPException(status_code=400, detail="Empty or unreadable image")
 
-    loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(
-        None,
-        partial(_process_image_bytes, image_bytes, model_key=model)
-    )
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            inference_executor,
+            partial(_process_image_bytes, image_bytes, model_key=model)
+        )
+    except Exception as e:
+        print(f"!! [Endpoint /tag-image] Error in processing: {str(e)}", flush=True)
+        raise e
+    finally:
+        await file.close()
 
     duration = time.time() - req_start
-    print(f"-> [Endpoint /tag-image] Total request time: {duration:.3f}s (model={model})")
+    print(f"-> [Endpoint /tag-image] Request completed in {duration:.3f}s for {file.filename}", flush=True)
 
     return TagResponse(
         style=result["style"],
@@ -114,7 +130,7 @@ async def tag_image_from_url(
 
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(
-        None,
+        inference_executor,
         partial(_process_image_bytes, image_bytes, model_key=model)
     )
 
@@ -144,12 +160,13 @@ async def tag_images_from_urls(
 
     loop = asyncio.get_event_loop()
 
-    async def process_url(url: str, executor: ThreadPoolExecutor):
+    async def process_url(url: str):
         try:
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             }
-            async with httpx.AsyncClient(timeout=30.0, headers=headers) as client:
+            # Use a shorter timeout for batch items to prevent one hang from blocking the whole request
+            async with httpx.AsyncClient(timeout=15.0, headers=headers) as client:
                 response = await client.get(url, follow_redirects=True)
                 response.raise_for_status()
                 content_type = response.headers.get("content-type", "")
@@ -161,7 +178,7 @@ async def tag_images_from_urls(
                 return {"url": url, "status": "error", "error": "Empty or unreadable image"}
 
             result = await loop.run_in_executor(
-                executor,
+                inference_executor,
                 partial(_process_image_bytes, image_bytes, model_key=model)
             )
 
@@ -179,9 +196,8 @@ async def tag_images_from_urls(
         except Exception as e:
             return {"url": url, "status": "error", "error": f"Processing error: {str(e)}"}
 
-    with ThreadPoolExecutor(max_workers=threads) as executor:
-        tasks = [process_url(url, executor) for url in urls]
-        results = await asyncio.gather(*tasks)
+    tasks = [process_url(url) for url in urls]
+    results = await asyncio.gather(*tasks)
 
     duration = time.time() - req_start
     print(f"-> [Endpoint /tag-image/urls-batch] Total request time for {len(urls)} items: {duration:.3f}s")

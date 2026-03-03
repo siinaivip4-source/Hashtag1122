@@ -49,11 +49,14 @@ async function runAll() {
             const oldCompleted = state.completed;
 
             try {
+                const taskName = task.type === "file" ? task.obj.file.name : (task.obj.url || "URL");
+                console.log(`[Worker] Start: ${taskName} (index ${task.index})`);
                 if (task.type === "file") {
                     await runForFile(task.obj, task.index);
                 } else {
                     await runForUrl(task.obj, task.index);
                 }
+                console.log(`[Worker] Done: ${taskName}`);
 
                 // Kiểm tra xem task vừa rồi thành công hay thất bại
                 if (state.completed > oldCompleted) sessionCompleted++;
