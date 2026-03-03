@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class HealthResponse(BaseModel):
     status: str
     model_backend: str
+    device: str
 
 
 class TagResponse(BaseModel):

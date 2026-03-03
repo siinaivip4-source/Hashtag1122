@@ -99,7 +99,16 @@ COLOR_PROMPT_MAP = {
 
 class ClipService:
     def __init__(self):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cpu"
+        if torch.cuda.is_available():
+            self.device = "cuda"
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            self.device = "mps"
+            
+        print(f"--- [INITIALIZATION] ClipService using device: {self.device.upper()} ---")
+        if self.device == "cuda":
+            print(f"--- [GPU INFO] Device Name: {torch.cuda.get_device_name(0)} ---")
+            
         self.loaded_models = {}
         self.model_map = {
             "clip-openai": "openai/clip-vit-base-patch32",
@@ -114,7 +123,8 @@ class ClipService:
         repo_id = self.model_map.get(model_key, "openai/clip-vit-base-patch32")
         print(f"Loading CLIP model '{model_key}' ({repo_id}) via transformers...")
         
-        model = CLIPModel.from_pretrained(repo_id).to(self.device)
+        dtype = torch.float16 if self.device != "cpu" else torch.float32
+        model = CLIPModel.from_pretrained(repo_id, torch_dtype=dtype).to(self.device)
         processor = CLIPProcessor.from_pretrained(repo_id)
         
         s_prompts = [STYLE_PROMPT_MAP.get(s, f"a {s} style artwork") for s in STYLES]
@@ -167,6 +177,7 @@ class ClipService:
         
         with torch.no_grad():
             inputs = processor(images=image, return_tensors="pt").to(self.device)
+            print(f"--- [INFERENCE] Model: {model_key} | Device: {self.device.upper()} | Tensor Device: {inputs['pixel_values'].device} ---")
             img_feat = model.get_image_features(**inputs)
             img_feat /= img_feat.norm(dim=-1, keepdim=True)
             
