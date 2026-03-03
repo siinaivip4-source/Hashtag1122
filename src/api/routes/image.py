@@ -55,34 +55,47 @@ async def load_model(
     }
 
 
+inference_executor = ThreadPoolExecutor(max_workers=10)
+
 @router.post("", response_model=TagResponse)
 async def tag_image(
     file: Annotated[UploadFile, File(description="Image to analyze")],
     model: Annotated[Optional[str], Form(description="Model key to use")] = "clip-openai",
 ):
     req_start = time.time()
+    filename = file.filename
+    print(f"-> [Endpoint /tag-image] Incoming request for: {filename}", flush=True)
 
     if not file.content_type.startswith("image/"):
+        print(f"-> [Endpoint /tag-image] Invalid file type: {file.content_type}")
         raise HTTPException(status_code=400, detail="File is not an image")
 
-    image_bytes = await file.read()
-    if not image_bytes:
-        raise HTTPException(status_code=400, detail="Empty or unreadable image")
+    try:
+        print(f"-> [Endpoint /tag-image] Reading bytes for {filename}...", flush=True)
+        image_bytes = await file.read()
+        print(f"-> [Endpoint /tag-image] Bytes read: {len(image_bytes)} bytes", flush=True)
+        
+        if not image_bytes:
+            print(f"-> [Endpoint /tag-image] Error: image_bytes is empty")
+            raise HTTPException(status_code=400, detail="Empty or unreadable image")
 
-    loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(
-        None,
-        partial(_process_image_bytes, image_bytes, model_key=model)
-    )
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            inference_executor,
+            partial(_process_image_bytes, image_bytes, model_key=model)
+        )
 
-    duration = time.time() - req_start
-    print(f"-> [Endpoint /tag-image] Total request time: {duration:.3f}s (model={model})")
+        duration = time.time() - req_start
+        print(f"-> [Endpoint /tag-image] Request completed in {duration:.3f}s for {filename}", flush=True)
 
-    return TagResponse(
-        style=result["style"],
-        color=result["color"],
-        clip_hashtags=result["clip_hashtags"]
-    )
+        return TagResponse(
+            style=result["style"],
+            color=result["color"],
+            clip_hashtags=result["clip_hashtags"]
+        )
+    finally:
+        await file.close()
+        print(f"-> [Endpoint /tag-image] Connection closed for {filename}", flush=True)
 
 
 @router.post("/url", response_model=TagResponse)
