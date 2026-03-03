@@ -99,11 +99,12 @@ COLOR_PROMPT_MAP = {
 
 class ClipService:
     def __init__(self):
-        self.device = "cpu"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.loaded_models = {}
         self.model_map = {
             "clip-openai": "openai/clip-vit-base-patch32",
-            "clip-openclip-laion": "laion/CLIP-ViT-B-32-laion2B-s34B-b79K"
+            "clip-openclip-laion": "laion/CLIP-ViT-B-32-laion2B-s34B-b79K",
+            "clip-openclip-vit-h14": "laion/CLIP-ViT-H-14-laion2B-s32B-b79K",
         }
 
     def load(self, model_key: str = "clip-openai"):

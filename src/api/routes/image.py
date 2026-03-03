@@ -50,6 +50,7 @@ async def load_model(
 
     return {
         "status": "ok",
+        "model": model,
         "duration": duration,
     }
 

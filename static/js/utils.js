@@ -8,7 +8,8 @@ function formatSize(bytes) {
 function getModelDisplayName(modelKey) {
   const modelNames = {
     "clip-openai": "CLIP (OpenAI)",
-    "clip-openclip-laion": "OpenCLIP (LAION)"
+    "clip-openclip-laion": "OpenCLIP (LAION)",
+    "clip-openclip-vit-h14": "OpenCLIP (LAION ViT-H/14)",
   };
   return modelNames[modelKey] || modelKey || "CLIP (OpenAI)";
 }

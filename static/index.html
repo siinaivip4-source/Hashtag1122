@@ -75,6 +75,7 @@
               <select id="modelSelect" style="margin-top:5px; min-width:0; width:100%;">
                 <option value="clip-openai">🎯 CLIP (OpenAI ViT-B/32)</option>
                 <option value="clip-openclip-laion">🧠 OpenCLIP (LAION ViT-B/32)</option>
+                <option value="clip-openclip-vit-h14">⚡ OpenCLIP (LAION ViT-H/14)</option>
               </select>
             </div>
             <div class="field-row" style="flex-direction:column; align-items:flex-start; margin-bottom:0;">
@@ -192,12 +193,6 @@
   </div>
 
   <div id="toastContainer" class="toast-container"></div>
-  <div id="imagePreviewModal" class="image-preview-modal">
-    <div class="image-preview-content">
-      <img id="imagePreviewImg" src="" alt="Preview">
-    </div>
-  </div>
-
   <script src="/static/js/state.js?v=1.0.6"></script>
   <script src="/static/js/utils.js?v=1.0.6"></script>
   <script src="/static/js/ui.js?v=1.0.6"></script>
