@@ -49,6 +49,8 @@ function createItem(fileObj, index) {
   img.src = fileObj.previewUrl || "";
   img.loading = "lazy";
   img.decoding = "async";
+  img.style.cursor = "zoom-in";
+  img.onclick = () => openImagePreview(fileObj.previewUrl || "");
 
   // Actions overlay
   const actions = document.createElement("div");
@@ -150,6 +152,8 @@ function createUrlItem(urlObj, index, offset = 0) {
   img.src = urlObj.url;
   img.loading = "lazy";
   img.decoding = "async";
+  img.style.cursor = "zoom-in";
+  img.onclick = () => openImagePreview(urlObj.url);
   img.onerror = function () {
     this.style.display = "none";
     this.parentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6b7280;font-size:11px;">Ảnh không tải được</div>';
@@ -252,6 +256,24 @@ function refreshGallery() {
     const item = createUrlItem(urlObj, index, filesCount);
     gallery.appendChild(item);
   });
+}
+
+// ── Image Preview Logic ──────────────────────────────────────────
+
+const previewModal = document.getElementById("imagePreviewModal");
+const previewImg = document.getElementById("imagePreviewImg");
+
+if (previewModal) {
+  previewModal.addEventListener("click", () => {
+    previewModal.classList.remove("active");
+  });
+}
+
+/** Mở modal xem ảnh full */
+function openImagePreview(src) {
+  if (!previewModal || !previewImg) return;
+  previewImg.src = src;
+  previewModal.classList.add("active");
 }
 
 /**
