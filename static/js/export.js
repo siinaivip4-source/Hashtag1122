@@ -113,25 +113,54 @@ function exportToExcel() {
   const data = getExportData();
   if (!data.length) return;
 
+  if (typeof XLSX === "undefined") {
+    const headers = ["STT", "Tên file", "Style", "Color", "Hashtags"];
+    let csv = headers.join(",") + "\n";
+
+    data.forEach(row => {
+      const values = [
+        row["STT"],
+        escapeCsvValue(row["Tên file"] || ""),
+        escapeCsvValue(row["Style"] || ""),
+        escapeCsvValue(row["Color"] || ""),
+        escapeCsvValue(row["Hashtags"] || "")
+      ];
+      csv += values.join(",") + "\n";
+    });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "hashtags_export.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    return;
+  }
+
   const headers = ["STT", "Tên file", "Style", "Color", "Hashtags"];
-  let csv = headers.join(",") + "\n";
+  const rows = [headers];
 
   data.forEach(row => {
-    const values = [
+    rows.push([
       row["STT"],
-      escapeCsvValue(row["Tên file"] || ""),
-      escapeCsvValue(row["Style"] || ""),
-      escapeCsvValue(row["Color"] || ""),
-      escapeCsvValue(row["Hashtags"] || "")
-    ];
-    csv += values.join(",") + "\n";
+      row["Tên file"] || "",
+      row["Style"] || "",
+      row["Color"] || "",
+      row["Hashtags"] || ""
+    ]);
   });
 
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const worksheet = XLSX.utils.aoa_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Hashtags");
+
+  const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "hashtags_export.csv";
+  a.download = "hashtags_export.xlsx";
   a.click();
   URL.revokeObjectURL(url);
 }
