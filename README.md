@@ -48,7 +48,7 @@ processing:
   max_num_tags: 50
 ```
 
-## Running the API
+## Running the API (local)
 
 ```bash
 python main.py
@@ -65,6 +65,67 @@ API runs at `http://localhost:8000`
 - Web UI: `http://localhost:8000/`
 - Health check: `http://localhost:8000/health`
 - API docs: `http://localhost:8000/docs`
+
+## Running with Docker
+
+### CPU image (recommended, runs anywhere)
+
+```bash
+docker build -t image-hashtag-api:cpu .
+
+docker run --rm \
+  -p 6868:6868 \
+  -e PORT=6868 \
+  -v "$(pwd)/data:/data" \
+  --name image-hashtag-api \
+  image-hashtag-api:cpu
+```
+
+Then open:
+
+- Web UI: `http://localhost:6868/`
+- Health check: `http://localhost:6868/health`
+- API docs: `http://localhost:6868/docs`
+
+### GPU image (optional, if host has NVIDIA GPU)
+
+```bash
+docker build -t image-hashtag-api:latest .
+
+docker run --rm \
+  -p 6868:6868 \
+  -e PORT=6868 \
+  --gpus all \
+  -v "$(pwd)/data:/data" \
+  --name image-hashtag-api-gpu \
+  image-hashtag-api:latest
+```
+
+Inside `clip.py`, the service will automatically pick:
+
+- GPU when `torch.cuda.is_available() == True`
+- CPU otherwise
+
+## Running on port 6868 without Docker
+
+### Option 1: via `config.yaml`
+
+```yaml
+app:
+  host: "0.0.0.0"
+  port: 6868
+  reload: true
+```
+
+```bash
+python main.py
+```
+
+### Option 2: via uvicorn
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 6868
+```
 
 ## API Endpoints
 
