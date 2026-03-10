@@ -1,6 +1,6 @@
 # Image Hashtag API
 
-FastAPI-based image tagging service that generates hashtags, captions, style, and color predictions for images using local vision AI models.
+FastAPI-based image tagging service that generates hashtags, style, and color predictions for images using local vision AI models.
 
 ## Features
 
@@ -44,8 +44,6 @@ app:
 processing:
   max_length: 32
   num_beams: 4
-  default_num_tags: 10
-  max_num_tags: 50
 ```
 
 ## Running the API (local)

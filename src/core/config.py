@@ -41,5 +41,21 @@ class Config:
     def max_length(self) -> int:
         return self.processing.get("max_length", 32)
 
+    @property
+    def lock_timeout(self) -> int:
+        return self.processing.get("lock_timeout", 60)
+
+    @property
+    def inference_threads(self) -> int:
+        return self.processing.get("inference_threads", 10)
+
+    @property
+    def batch_max_threads(self) -> int:
+        return self.processing.get("batch_max_threads", 32)
+
+    @property
+    def batch_max_urls(self) -> int:
+        return self.processing.get("batch_max_urls", 50)
+
 
 config = Config()

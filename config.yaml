@@ -5,3 +5,7 @@ app:
 
 processing:
   max_length: 32
+  lock_timeout: 60
+  inference_threads: 10
+  batch_max_threads: 32
+  batch_max_urls: 50
