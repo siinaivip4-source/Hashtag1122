@@ -73,6 +73,9 @@ API runs at `http://localhost:8000`
 ```bash
 docker build -t image-hashtag-api:cpu .
 
+mkdir -p data
+sudo chown 10001:10001 data
+
 docker run --rm \
   -p 6868:6868 \
   -e PORT=6868 \
