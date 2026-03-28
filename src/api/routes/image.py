@@ -1,5 +1,5 @@
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
-from typing import Annotated, List, Optional, Any
+from typing import Annotated, List, Optional
 import httpx
 import asyncio
 import time
@@ -9,18 +9,22 @@ from functools import partial
 from src.services.clip import clip_service
 from src.core.config import config
 from src.schemas.response import TagResponse
+from src.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/tag-image", tags=["image"])
 
+inference_executor: Optional[ThreadPoolExecutor] = None
 
-def _process_image_bytes(image_bytes: bytes, model_key: str = "clip-openai") -> dict:
+
+def _process_image_bytes(image_bytes: bytes, model_key: str = "clip-openai") -> dict[str, str | list[str]]:
     start_time = time.time()
     
-    # Chỉ dùng CLIP cho việc phân loại style, color, object, mood, gender
     style, color, clip_hashtags = clip_service.predict(image_bytes, model_key=model_key)
 
     duration = time.time() - start_time
-    print(f"Image processed in {duration:.3f}s [model={model_key}]")
+    logger.info(f"Image processed in {duration:.3f}s [model={model_key}]")
 
     return {
         "style": style,
@@ -33,7 +37,7 @@ def _process_image_bytes(image_bytes: bytes, model_key: str = "clip-openai") -> 
 
 @router.post("/load-model")
 async def load_model(
-    model: Annotated[Optional[str], Form(description="Model key to load")] = "clip-openai",
+    model: Annotated[str, Form(description="Model key to load")] = "clip-openai",
 ) -> dict:
     req_start = time.time()
 
@@ -42,11 +46,11 @@ async def load_model(
         await loop.run_in_executor(None, partial(clip_service.load, model_key=model))
     except Exception as e:
         duration = time.time() - req_start
-        print(f"-> [Endpoint /tag-image/load-model] Failed after {duration:.3f}s: {e}")
+        logger.error(f"[Endpoint /tag-image/load-model] Failed after {duration:.3f}s: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to load model: {str(e)}")
 
     duration = time.time() - req_start
-    print(f"-> [Endpoint /tag-image/load-model] Model ready in {duration:.3f}s")
+    logger.info(f"[Endpoint /tag-image/load-model] Model ready in {duration:.3f}s")
 
     return {
         "status": "ok",
@@ -55,28 +59,26 @@ async def load_model(
     }
 
 
-inference_executor = ThreadPoolExecutor(max_workers=10)
-
 @router.post("", response_model=TagResponse)
 async def tag_image(
     file: Annotated[UploadFile, File(description="Image to analyze")],
-    model: Annotated[Optional[str], Form(description="Model key to use")] = "clip-openai",
+    model: Annotated[str, Form(description="Model key to use")] = "clip-openai",
 ):
     req_start = time.time()
-    filename = file.filename
-    print(f"-> [Endpoint /tag-image] Incoming request for: {filename}", flush=True)
+    filename = file.filename or "unknown"
+    logger.info(f"[Endpoint /tag-image] Incoming request for: {filename}")
 
-    if not file.content_type.startswith("image/"):
-        print(f"-> [Endpoint /tag-image] Invalid file type: {file.content_type}")
+    if not file.content_type or not file.content_type.startswith("image/"):
+        logger.error(f"[Endpoint /tag-image] Invalid file type: {file.content_type}")
         raise HTTPException(status_code=400, detail="File is not an image")
 
     try:
-        print(f"-> [Endpoint /tag-image] Reading bytes for {filename}...", flush=True)
+        logger.info(f"[Endpoint /tag-image] Reading bytes for {filename}...")
         image_bytes = await file.read()
-        print(f"-> [Endpoint /tag-image] Bytes read: {len(image_bytes)} bytes", flush=True)
+        logger.info(f"[Endpoint /tag-image] Bytes read: {len(image_bytes)} bytes")
         
         if not image_bytes:
-            print(f"-> [Endpoint /tag-image] Error: image_bytes is empty")
+            logger.error(f"[Endpoint /tag-image] Error: image_bytes is empty")
             raise HTTPException(status_code=400, detail="Empty or unreadable image")
 
         loop = asyncio.get_event_loop()
@@ -86,7 +88,7 @@ async def tag_image(
         )
 
         duration = time.time() - req_start
-        print(f"-> [Endpoint /tag-image] Request completed in {duration:.3f}s for {filename}", flush=True)
+        logger.info(f"[Endpoint /tag-image] Request completed in {duration:.3f}s for {filename}")
 
         return TagResponse(
             style=result["style"],
@@ -95,13 +97,13 @@ async def tag_image(
         )
     finally:
         await file.close()
-        print(f"-> [Endpoint /tag-image] Connection closed for {filename}", flush=True)
+        logger.info(f"[Endpoint /tag-image] Connection closed for {filename}")
 
 
 @router.post("/url", response_model=TagResponse)
 async def tag_image_from_url(
     url: Annotated[str, Form(description="Image URL to analyze")],
-    model: Annotated[Optional[str], Form(description="Model key to use")] = "clip-openai",
+    model: Annotated[str, Form(description="Model key to use")] = "clip-openai",
 ):
     req_start = time.time()
 
@@ -110,7 +112,6 @@ async def tag_image_from_url(
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
         async with httpx.AsyncClient(timeout=30.0, headers=headers) as client:
-            # check the response
             response = await client.get(url, follow_redirects=True)
             response.raise_for_status()
             content_type = response.headers.get("content-type", "")
@@ -127,12 +128,12 @@ async def tag_image_from_url(
 
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(
-        None,
+        inference_executor,
         partial(_process_image_bytes, image_bytes, model_key=model)
     )
 
     duration = time.time() - req_start
-    print(f"-> [Endpoint /tag-image/url] Total request time: {duration:.3f}s")
+    logger.info(f"[Endpoint /tag-image/url] Total request time: {duration:.3f}s")
 
     return TagResponse(
         style=result["style"],
@@ -144,16 +145,16 @@ async def tag_image_from_url(
 @router.post("/urls-batch")
 async def tag_images_from_urls(
     urls: Annotated[List[str], Form(description="List of image URLs to analyze")],
-    model: Annotated[Optional[str], Form(description="Model key to use")] = "clip-openai",
-    threads: int = Form(4, ge=1, le=32, description="Number of concurrent threads"),
+    model: Annotated[str, Form(description="Model key to use")] = "clip-openai",
+    threads: int = Form(4, ge=1, le=config.batch_max_threads, description="Number of concurrent threads"),
 ):
     req_start = time.time()
 
     if not urls:
         raise HTTPException(status_code=400, detail="No URLs provided")
 
-    if len(urls) > 50:
-        raise HTTPException(status_code=400, detail="Maximum 50 URLs per batch")
+    if len(urls) > config.batch_max_urls:
+        raise HTTPException(status_code=400, detail=f"Maximum {config.batch_max_urls} URLs per batch")
 
     loop = asyncio.get_event_loop()
 
@@ -197,6 +198,6 @@ async def tag_images_from_urls(
         results = await asyncio.gather(*tasks)
 
     duration = time.time() - req_start
-    print(f"-> [Endpoint /tag-image/urls-batch] Total request time for {len(urls)} items: {duration:.3f}s")
+    logger.info(f"[Endpoint /tag-image/urls-batch] Total request time for {len(urls)} items: {duration:.3f}s")
     
     return {"results": results}

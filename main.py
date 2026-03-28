@@ -4,26 +4,43 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import time
+from concurrent.futures import ThreadPoolExecutor
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.core.config import config
+from src.core.logger import get_logger
 from src.api.routes import image, health, debug
+
+logger = get_logger(__name__)
+
+from typing import Optional
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
+inference_executor: Optional[ThreadPoolExecutor] = None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global inference_executor
+    inference_executor = ThreadPoolExecutor(max_workers=config.inference_threads)
+    image.inference_executor = inference_executor
+    logger.info(f"Started inference executor with {config.inference_threads} workers")
     yield
+    if inference_executor:
+        inference_executor.shutdown(wait=True)
+        logger.info("Shutting down inference executor")
+
 
 class LoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         start_time = time.time()
-        print(f"==> Incoming {request.method} {request.url.path}", flush=True)
+        logger.info(f"Incoming {request.method} {request.url.path}")
         try:
             response = await call_next(request)
             return response
         finally:
-            print(f" <== Done {request.method} {request.url.path} after {time.time() - start_time:.3f}s", flush=True)
+            logger.info(f"Done {request.method} {request.url.path} after {time.time() - start_time:.3f}s")
 
 app = FastAPI(
     title="Image Hashtag API",

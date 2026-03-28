@@ -1,0 +1,19 @@
+.git
+.gitignore
+.pytest_cache
+.ruff_cache
+.mypy_cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+venv/
+.venv/
+
+*.log
+
+# Local model / cache dirs (keep image small)
+data/
+models/
+.cache/

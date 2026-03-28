@@ -4,6 +4,12 @@ import time
 from PIL import Image
 from io import BytesIO
 from transformers import CLIPModel, CLIPProcessor
+from typing import Dict, Any
+
+from src.core.logger import get_logger
+from src.core.config import config
+
+logger = get_logger(__name__)
 
 STYLES = [
     "2D", "3D", "Cute", "Animeart", "Realism",
@@ -102,26 +108,32 @@ COLOR_PROMPT_MAP = {
 class ClipService:
     def __init__(self):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.loaded_models = {}
+        self.loaded_models: Dict[str, Dict[str, Any]] = {}
         self.model_map = {
             "clip-openai": "openai/clip-vit-base-patch32",
             "clip-openclip-laion": "laion/CLIP-ViT-B-32-laion2B-s34B-b79K",
             "clip-openclip-vit-h14": "laion/CLIP-ViT-H-14-laion2B-s32B-b79K",
         }
-        self._lock = threading.Lock()
+        self._load_lock = threading.Lock()
+        self._inference_locks: Dict[str, threading.Lock] = {}
         self._request_count = 0
 
-    def load(self, model_key: str = "clip-openai"):
+    def _get_inference_lock(self, model_key: str) -> threading.Lock:
+        if model_key not in self._inference_locks:
+            self._inference_locks[model_key] = threading.Lock()
+        return self._inference_locks[model_key]
+
+    def load(self, model_key: str = "clip-openai") -> None:
         if model_key in self.loaded_models:
             return
             
-        print(f"[*] Thread {threading.get_ident()} waiting to load model '{model_key}'...", flush=True)
-        with self._lock:
+        logger.info(f"Thread {threading.get_ident()} waiting to load model '{model_key}'...")
+        with self._load_lock:
             if model_key in self.loaded_models:
                 return
                 
             repo_id = self.model_map.get(model_key, "openai/clip-vit-base-patch32")
-            print(f"[*] Loading CLIP model '{model_key}' ({repo_id}) to {self.device}...", flush=True)
+            logger.info(f"Loading CLIP model '{model_key}' ({repo_id}) to {self.device}...")
             
             model = CLIPModel.from_pretrained(repo_id).to(self.device)
             processor = CLIPProcessor.from_pretrained(repo_id)
@@ -160,14 +172,14 @@ class ClipService:
                 "mood_feat": mood_feat,
                 "gender_feat": gender_feat
             }
-            print(f"[+] CLIP model '{model_key}' ready.", flush=True)
+            logger.info(f"CLIP model '{model_key}' ready.")
 
     def predict(self, image_bytes: bytes, model_key: str = "clip-openai") -> tuple[str, str, list[str]]:
         self._request_count += 1
         rid = self._request_count
         start_time = time.time()
         
-        print(f"[REQ-{rid}] Pipeline start for {len(image_bytes)} bytes", flush=True)
+        logger.info(f"[REQ-{rid}] Pipeline start for {len(image_bytes)} bytes")
         self.load(model_key)
         
         m_data = self.loaded_models.get(model_key)
@@ -181,16 +193,17 @@ class ClipService:
         if image.mode != "RGB":
             image = image.convert("RGB")
         
-        print(f"[REQ-{rid}] Waiting for model lock...", flush=True)
+        logger.info(f"[REQ-{rid}] Waiting for model lock...")
         lock_start = time.time()
-        acquired = self._lock.acquire(timeout=60)
+        lock = self._get_inference_lock(model_key)
+        acquired = lock.acquire(timeout=config.lock_timeout)
         if not acquired:
-            print(f"[REQ-{rid}] CRITICAL: Lock timeout (60s).", flush=True)
-            raise Exception("Server Busy: AI model lock timeout")
+            logger.error(f"[REQ-{rid}] Lock timeout ({config.lock_timeout}s).")
+            raise Exception(f"Server Busy: AI model lock timeout")
             
         try:
             wait_time = time.time() - lock_start
-            print(f"[REQ-{rid}] Lock acquired (waited {wait_time:.3f}s). Processing...", flush=True)
+            logger.info(f"[REQ-{rid}] Lock acquired (waited {wait_time:.3f}s). Processing...")
             
             with torch.no_grad():
                 inputs = processor(images=image, return_tensors="pt").to(self.device)
@@ -218,7 +231,7 @@ class ClipService:
             image.close()
             return STYLES[s_idx], COLORS[c_idx], hashtags
         finally:
-            self._lock.release()
-            print(f"[REQ-{rid}] Released lock. Total: {time.time() - start_time:.3f}s", flush=True)
+            lock.release()
+            logger.info(f"[REQ-{rid}] Released lock. Total: {time.time() - start_time:.3f}s")
 
 clip_service = ClipService()
