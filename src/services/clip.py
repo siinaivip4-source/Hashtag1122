@@ -218,16 +218,22 @@ class ClipService:
             
             s_idx = s_probs.argmax().item()
             c_idx = c_probs.argmax().item()
-            obj_idx = obj_probs.argmax().item()
             mood_idx = mood_probs.argmax().item()
             gender_idx = gender_probs.argmax().item()
-            
+
+            # Lấy top-2 objects có xác suất cao nhất
+            obj_scores = obj_probs[0]
+            obj_top2 = obj_scores.topk(2).indices.tolist()
+            obj1 = TAGS_OBJECT[obj_top2[0]]
+            obj2 = TAGS_OBJECT[obj_top2[1]]
+
             hashtags = [
-                TAGS_OBJECT[obj_idx],
+                obj1,
+                obj2,
                 TAGS_MOOD[mood_idx],
                 TAGS_GENDER[gender_idx]
             ]
-            
+
             image.close()
             return STYLES[s_idx], COLORS[c_idx], hashtags
         finally:

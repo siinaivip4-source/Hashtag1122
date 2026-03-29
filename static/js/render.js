@@ -118,43 +118,59 @@ function renderResult({ obj, stateKey, index, tags, style, color, tagsEl, footer
         return; // Không có chỗ để render kết quả
     }
 
-    // ── Row 1: Style, Color, Object, Mood, Gender ────────────────
+    // ── Row 1: Object1, Object2, Style, Color, Mood, Gender ──────
     const metaRow = document.createElement("div");
     metaRow.className = "result-badges";
 
-    metaRow.appendChild(
-        createSelectEl(ALL_STYLES, style || "None", "Style",
-            val => { obj.style = val; })
-    );
-    metaRow.appendChild(
-        createSelectEl(ALL_COLORS, color || "None", "Color",
-            val => { obj.color = val; })
-    );
-
-    // tags dự kiến là [Object, Mood, Gender] từ CLIP
+    // tags dự kiến là [Object1, Object2, Mood, Gender] từ CLIP (4 phần tử)
+    // Backward-compatible với [Object, Mood, Gender] (3 phần tử)
     if (tags.length >= 3) {
         // Khởi tạo selectedTags nếu chưa có (lần đầu render)
         if (!obj.selectedTags) {
-            // Kiểm tra tính hợp lệ, nếu không có trong list thì để "None"
-            const finalObj = TAGS_OBJECT.includes(tags[0]) ? tags[0] : "None";
-            const finalMood = TAGS_MOOD.includes(tags[1]) ? tags[1] : "None";
-            const finalGender = TAGS_GENDER.includes(tags[2]) ? tags[2] : "None";
-            obj.selectedTags = [finalObj, finalMood, finalGender];
+            if (tags.length >= 4) {
+                // Format mới: [Obj1, Obj2, Mood, Gender]
+                const finalObj1   = TAGS_OBJECT.includes(tags[0]) ? tags[0] : "None";
+                const finalObj2   = TAGS_OBJECT.includes(tags[1]) ? tags[1] : "None";
+                const finalMood   = TAGS_MOOD.includes(tags[2])   ? tags[2] : "None";
+                const finalGender = TAGS_GENDER.includes(tags[3]) ? tags[3] : "None";
+                obj.selectedTags = [finalObj1, finalObj2, finalMood, finalGender];
+            } else {
+                // Format cũ: [Obj, Mood, Gender] — Object2 = "None"
+                const finalObj1   = TAGS_OBJECT.includes(tags[0]) ? tags[0] : "None";
+                const finalMood   = TAGS_MOOD.includes(tags[1])   ? tags[1] : "None";
+                const finalGender = TAGS_GENDER.includes(tags[2]) ? tags[2] : "None";
+                obj.selectedTags = [finalObj1, "None", finalMood, finalGender];
+            }
         }
 
-        // Dropdown 1: Object
-        metaRow.appendChild(createSelectEl(TAGS_OBJECT, obj.selectedTags[0], "Object", val => {
+        // Dropdown 1: Object 1
+        metaRow.appendChild(createSelectEl(TAGS_OBJECT, obj.selectedTags[0], "Object 1", val => {
             obj.selectedTags[0] = val;
         }));
 
-        // Dropdown 2: Mood
-        metaRow.appendChild(createSelectEl(TAGS_MOOD, obj.selectedTags[1], "Mood", val => {
+        // Dropdown 2: Object 2
+        metaRow.appendChild(createSelectEl(TAGS_OBJECT, obj.selectedTags[1], "Object 2", val => {
             obj.selectedTags[1] = val;
         }));
 
-        // Dropdown 3: Gender
-        metaRow.appendChild(createSelectEl(TAGS_GENDER, obj.selectedTags[2], "Gender", val => {
+        // Dropdown 3: Style
+        metaRow.appendChild(createSelectEl(ALL_STYLES, style || "None", "Style",
+            val => { obj.style = val; })
+        );
+
+        // Dropdown 4: Color
+        metaRow.appendChild(createSelectEl(ALL_COLORS, color || "None", "Color",
+            val => { obj.color = val; })
+        );
+
+        // Dropdown 5: Mood
+        metaRow.appendChild(createSelectEl(TAGS_MOOD, obj.selectedTags[2], "Mood", val => {
             obj.selectedTags[2] = val;
+        }));
+
+        // Dropdown 6: Gender
+        metaRow.appendChild(createSelectEl(TAGS_GENDER, obj.selectedTags[3], "Gender", val => {
+            obj.selectedTags[3] = val;
         }));
 
         tagsEl.appendChild(metaRow);
@@ -165,24 +181,29 @@ function renderResult({ obj, stateKey, index, tags, style, color, tagsEl, footer
         if (copyBtn) {
             copyBtn.disabled = false;
             copyBtn.onclick = () => {
-                const hashTags = obj.selectedTags
+                // Thứ tự hashtag copy: Object1, Object2, Style, Color, Mood, Gender
+                const allParts = [
+                    obj.selectedTags[0], // Object 1
+                    obj.selectedTags[1], // Object 2
+                    obj.style,           // Style
+                    obj.color,           // Color
+                    obj.selectedTags[2], // Mood
+                    obj.selectedTags[3]  // Gender
+                ]
                     .filter(t => t && t !== "None")
                     .map(t => (t.startsWith("#") ? t : `#${t.toLowerCase().replace(/\s+/g, '')}`));
 
-                const extras = [obj.style, obj.color]
-                    .filter(x => x && x !== "None")
-                    .map(x => (x.startsWith("#") ? x : `#${x.toLowerCase().replace(/\s+/g, '')}`));
-
-                navigator.clipboard.writeText([...hashTags, ...extras].join(" ")).catch(() => { });
+                navigator.clipboard.writeText(allParts.join(" ")).catch(() => { });
             };
         }
 
     } else {
         const msg = document.createElement("div");
         msg.style.cssText = "font-size:11.5px; color:var(--text-muted); padding:6px 0;";
-        msg.textContent = "Không đủ dữ liệu phân loại (Cần Object, Mood, Gender)";
+        msg.textContent = "Không đủ dữ liệu phân loại (Cần ít nhất Object, Mood, Gender)";
         tagsEl.appendChild(msg);
         footerMeta.textContent = "Lỗi dữ liệu";
         if (copyBtn) copyBtn.disabled = true;
     }
 }
+
