@@ -107,6 +107,7 @@ function updateSuggestions(searchInput, suggestBox, filterSelect) {
 
   _suggestions = source
     .filter(item => item.toLowerCase().includes(q))
+    .sort((a, b) => a.localeCompare(b))
     .slice(0, 10); // Tối đa 10 gợi ý
 
   if (!_suggestions.length) {

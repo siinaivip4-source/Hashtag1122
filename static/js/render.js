@@ -72,10 +72,16 @@ function createSelectEl(options, selected, label, onChange) {
     const sel = document.createElement("select");
     sel.className = "custom-val-select";
 
+    // Sắp xếp A-Z (giữ "None" ở đầu nếu có)
+    let sortedOptions = [...options].sort((a, b) => a.localeCompare(b));
+    if (sortedOptions.includes("None")) {
+        sortedOptions = ["None", ...sortedOptions.filter(o => o !== "None")];
+    }
+
     // Nếu giá trị hiện tại không có trong danh sách → thêm vào đầu
-    const allOpts = options.includes(selected) || !selected
-        ? options
-        : [selected, ...options];
+    const allOpts = sortedOptions.includes(selected) || !selected
+        ? sortedOptions
+        : [selected, ...sortedOptions];
 
     allOpts.forEach(opt => {
         const o = document.createElement("option");

@@ -26,7 +26,7 @@ COLORS = [
     "Purple", "Brown", "Grey"
 ]
 
-TAGS_OBJECT = [
+TAGS_OBJECT = ["None",
     "sport", "football", "messi", "lamineyamal", "ronaldo", "mbappe", "flamengo", "sepalmeiras", "sccorinthianspaulista", "juventus", "realmadrid", "dortmund", "chelsea", "intermiami", "neymar", "manchesterunited", "manchestercity", "bayernmunich", "barcelona", "liverpool", "sonheungmin", "atleticomadrid", "arsenal", "cricket", "dhoni", "basketball", "phoenixsuns", "milwaukeebucks", "michaeljordan", "stephencurry", "goldenstatewarriors", "superbowl",
     "animal", "lion", "wolf", "leopard", "phoenix", "pet", "dog", "cow", "butterfly", "dragon", "cat", "rabbit", "panda", "bear", "hamster", "fish", "bird", "eagle", "tiger", "unicorn", "duck", "peacock", "capybara", "elephant", "pig", "fox", "monkey", "penguins", "squirrel", "horse", "sheep", "camel",
     "universe", "planet", "astronaut", "galaxy", "spaceship", "aurora",
