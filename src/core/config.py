@@ -22,6 +22,10 @@ class Config:
         return self._config.get("app", {})
 
     @property
+    def auth_config(self) -> dict:
+        return self._config.get("auth", {})
+
+    @property
     def processing(self) -> dict:
         return self._config.get("processing", {})
 
@@ -36,6 +40,46 @@ class Config:
     @property
     def reload(self) -> bool:
         return self.app.get("reload", False)
+
+    @property
+    def allowed_email_domain(self) -> str:
+        return self.auth_config.get("allowed_email_domain", "@tp.com.vn")
+
+    @property
+    def google_client_id(self) -> str:
+        return os.getenv("GOOGLE_CLIENT_ID", "")
+
+    @property
+    def google_client_secret(self) -> str:
+        return os.getenv("GOOGLE_CLIENT_SECRET", "")
+
+    @property
+    def session_secret(self) -> str:
+        value = os.getenv("SESSION_SECRET", "").strip()
+        if not value:
+            raise RuntimeError("SESSION_SECRET environment variable must be set")
+        return value
+
+    @property
+    def allowed_email_domain_normalized(self) -> str:
+        domain = (self.allowed_email_domain or "").strip().lower()
+        if domain and not domain.startswith("@"):
+            domain = "@" + domain
+        return domain
+
+    @property
+    def auth_enabled(self) -> bool:
+        return bool(self.google_client_id and self.google_client_secret)
+
+    def is_email_allowed(self, email: str | None) -> bool:
+        if not self.auth_enabled:
+            return True
+        domain = self.allowed_email_domain_normalized
+        if not domain:
+            return False
+        if not email:
+            return False
+        return email.strip().lower().endswith(domain)
 
     @property
     def max_length(self) -> int:

@@ -3,6 +3,9 @@ app:
   port: 8000
   reload: true
 
+auth:
+  allowed_email_domain: "@tp.com.vn"
+
 processing:
   max_length: 32
   lock_timeout: 60

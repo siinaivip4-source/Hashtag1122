@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, UploadFile, Form, HTTPException
+from fastapi import APIRouter, Depends, File, UploadFile, Form, HTTPException
 from typing import Annotated, List, Optional
 import httpx
 import asyncio
@@ -10,10 +10,15 @@ from src.services.clip import clip_service
 from src.core.config import config
 from src.schemas.response import TagResponse
 from src.core.logger import get_logger
+from src.api.deps import require_tp_user
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/tag-image", tags=["image"])
+router = APIRouter(
+    prefix="/tag-image",
+    tags=["image"],
+    dependencies=[Depends(require_tp_user)],
+)
 
 inference_executor: Optional[ThreadPoolExecutor] = None
 

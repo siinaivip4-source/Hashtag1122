@@ -1,1 +1,1 @@
-from . import image, health, debug
+from . import image, health, debug, auth
