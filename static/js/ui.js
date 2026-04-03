@@ -50,7 +50,7 @@ function createItem(fileObj, index) {
   img.loading = "lazy";
   img.decoding = "async";
   img.style.cursor = "zoom-in";
-  img.onclick = () => openImagePreview(fileObj.previewUrl || "");
+  img.onclick = () => openImagePreviewForFile(fileObj);
 
   // Actions overlay
   const actions = document.createElement("div");
@@ -153,7 +153,7 @@ function createUrlItem(urlObj, index, offset = 0) {
   img.loading = "lazy";
   img.decoding = "async";
   img.style.cursor = "zoom-in";
-  img.onclick = () => openImagePreview(urlObj.url);
+  img.onclick = () => openImagePreviewForUrl(urlObj.url);
   img.onerror = function () {
     this.style.display = "none";
     this.parentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6b7280;font-size:11px;">Ảnh không tải được</div>';
@@ -379,6 +379,31 @@ document.addEventListener("keydown", e => {
   if (e.key === "-")          { _zoomBy(-ZOOM_STEP * 2); _updateLabel(); }
 });
 
+let _currentObjectUrl = null;
+
+function openImagePreviewForFile(fileObj) {
+  if (_currentObjectUrl) {
+    URL.revokeObjectURL(_currentObjectUrl);
+    _currentObjectUrl = null;
+  }
+  try {
+    // Generate high res URL on the fly
+    _currentObjectUrl = URL.createObjectURL(fileObj.file);
+    openImagePreview(_currentObjectUrl);
+  } catch (err) {
+    // Fallback to thumbnail
+    openImagePreview(fileObj.previewUrl);
+  }
+}
+
+function openImagePreviewForUrl(url) {
+  if (_currentObjectUrl) {
+    URL.revokeObjectURL(_currentObjectUrl);
+    _currentObjectUrl = null;
+  }
+  openImagePreview(url);
+}
+
 /** Mở modal xem ảnh full */
 function openImagePreview(src) {
   if (!previewModal || !previewImg) return;
@@ -395,6 +420,11 @@ function closeImagePreview() {
   previewModal.classList.remove("active");
   _resetZoom();
   _updateLabel();
+  if (_currentObjectUrl) {
+    // Release memory
+    URL.revokeObjectURL(_currentObjectUrl);
+    _currentObjectUrl = null;
+  }
 }
 
 /**
