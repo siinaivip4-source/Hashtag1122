@@ -82,7 +82,7 @@ COLOR_PROMPT_MAP = {
     "Black": "black clothing, black outfit, black object, black fashion, matte black material, deep obsidian, midnight void, jet black silk, charcoal shadows, ink-washed darkness",
     "White": "white clothing, white outfit, white object, bright white surface, ivory elegance, snow-capped purity, pearl sheen, alabaster texture, bleached linen",
     "Blackandwhite": "black and white photography, monochrome, greyscale image, high contrast noir, silver screen nostalgia, charcoal sketch, dramatic chiaroscuro, ink on parchment",
-    "Red": "bright red clothing, red car, red flower, crimson object, strong red color, ruby radiance, scarlet velvet, burning ember, cherry blossom red, blood orange intensity",
+    "Red": "clearly red colored object, vivid red fabric, bold red paint, pure red rose, firetruck red, red traffic light, solid red flag, red lipstick, cardinal red dominant color, undeniably red, tomato red, pure scarlet red hue",
     "Yellow": "bright yellow clothing, yellow object, sunflower color, golden yellow, canary brilliance, honey gold, lemon zest, amber glow, saffron silk",
     "Blue": "blue clothing, blue sky, blue ocean, blue object, cyan, sapphire depth, cobalt sky, navy professional, azure mist, electric blue spark",
     "Green": "green clothing, green plants, nature, forest, green object, emerald lush, mossy earth, jade stone, lime vibrancy, sage leaves",
@@ -217,7 +217,6 @@ class ClipService:
             gender_probs = (100.0 * img_feat @ m_data["gender_feat"].T).softmax(dim=-1)
             
             s_idx = s_probs.argmax().item()
-            c_idx = c_probs.argmax().item()
             mood_idx = mood_probs.argmax().item()
             gender_idx = gender_probs.argmax().item()
 
@@ -234,8 +233,18 @@ class ClipService:
                 TAGS_GENDER[gender_idx]
             ]
 
+            # ── Color: chỉ nhận màu khi model đủ tự tin (vượt threshold)
+            # Threshold 0.10 = cần ít nhất 2.3x tự tin hơn chọn ngẫu nhiên (1/23 ≈04.35%)
+            COLOR_THRESHOLD = 0.10
+            c_vals = c_probs[0]
+            c_max_score = c_vals.max().item()
+            c_idx = c_vals.argmax().item()
+            final_color = COLORS[c_idx] if c_max_score >= COLOR_THRESHOLD else "None"
+            logger.info(f"[REQ-{rid}] Color: {COLORS[c_idx]} score={c_max_score:.4f} "
+                        f"({'accepted' if c_max_score >= COLOR_THRESHOLD else 'REJECTED -> None'})")
+
             image.close()
-            return STYLES[s_idx], COLORS[c_idx], hashtags
+            return STYLES[s_idx], final_color, hashtags
         finally:
             lock.release()
             logger.info(f"[REQ-{rid}] Released lock. Total: {time.time() - start_time:.3f}s")

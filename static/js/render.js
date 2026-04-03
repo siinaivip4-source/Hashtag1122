@@ -53,49 +53,175 @@ const TAGS_GENDER = ["Boy", "Girl", "Man", "Woman", "Couple", "None"];
 
 // ── Helpers ──────────────────────────────────────────────────────
 
+// Biến theo dõi dropdown đang mở {wrapper, panel}
+let _openDropdown = null;
+
+document.addEventListener("mousedown", (e) => {
+    if (_openDropdown) {
+        const { wrapper, panel } = _openDropdown;
+        if (!wrapper.contains(e.target) && !panel.contains(e.target)) {
+            _closeDropdown();
+        }
+    }
+});
+
+function _closeDropdown() {
+    if (!_openDropdown) return;
+    const { panel } = _openDropdown;
+    panel.classList.remove("ssd-panel--open");
+    panel.style.display = "none";
+    _openDropdown = null;
+}
+
 /**
- * Tạo <label> + <select> cho Style, Color hoặc một hashtag.
+ * Tạo custom searchable dropdown cho Style, Color, Object, Mood, Gender.
+ * Có ô tìm kiếm bên trong dropdown để lọc nhanh.
+ *
  * @param {string[]} options    - Danh sách option
  * @param {string}   selected   - Giá trị đang được chọn
  * @param {string}   label      - Nhãn hiển thị phía trên
  * @param {Function} onChange   - Callback(newValue) khi đổi giá trị
- * @returns {HTMLElement} label element
+ * @returns {HTMLElement}
  */
 function createSelectEl(options, selected, label, onChange) {
-    const wrapper = document.createElement("label");
-    wrapper.className = "result-select-label";
-
-    const name = document.createElement("span");
-    name.className = "result-select-name";
-    name.textContent = label;
-
-    const sel = document.createElement("select");
-    sel.className = "custom-val-select";
-
-    // Sắp xếp A-Z (giữ "None" ở đầu nếu có)
+    // Sắp xếp A-Z, None ở đầu
     let sortedOptions = [...options].sort((a, b) => a.localeCompare(b));
     if (sortedOptions.includes("None")) {
         sortedOptions = ["None", ...sortedOptions.filter(o => o !== "None")];
     }
+    // Nếu giá trị chọn không có trong list → thêm vào
+    if (selected && !sortedOptions.includes(selected)) {
+        sortedOptions = [selected, ...sortedOptions];
+    }
 
-    // Nếu giá trị hiện tại không có trong danh sách → thêm vào đầu
-    const allOpts = sortedOptions.includes(selected) || !selected
-        ? sortedOptions
-        : [selected, ...sortedOptions];
+    let currentValue = selected || sortedOptions[0] || "";
 
-    allOpts.forEach(opt => {
-        const o = document.createElement("option");
-        o.value = opt;
-        o.textContent = opt;
-        if (opt === selected) o.selected = true;
-        sel.appendChild(o);
+    // ── Wrapper ngoài cùng
+    const wrapper = document.createElement("div");
+    wrapper.className = "result-select-label ssd-wrapper";
+
+    // ── Nhãn (Object 1, Style...)
+    const nameEl = document.createElement("span");
+    nameEl.className = "result-select-name";
+    nameEl.textContent = label;
+
+    // ── Trigger button (hiển thị giá trị đang chọn)
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "ssd-trigger custom-val-select";
+    trigger.textContent = _cap(currentValue) || "—";
+
+    // ── Panel dropdown (input + list)
+    const panel = document.createElement("div");
+    panel.className = "ssd-panel";
+    panel.style.display = "none";
+
+    // Input search bên trong panel
+    const searchInput = document.createElement("input");
+    searchInput.type = "text";
+    searchInput.className = "ssd-search";
+    searchInput.placeholder = "🔍 Tìm...";
+    searchInput.autocomplete = "off";
+    searchInput.spellcheck = false;
+
+    // List các option
+    const list = document.createElement("div");
+    list.className = "ssd-list";
+
+    function renderList(query) {
+        const q = (query || "").toLowerCase().trim();
+        list.innerHTML = "";
+        const filtered = q
+            ? sortedOptions.filter(o => o.toLowerCase().includes(q))
+            : sortedOptions;
+
+        if (!filtered.length) {
+            const empty = document.createElement("div");
+            empty.className = "ssd-empty";
+            empty.textContent = "Không tìm thấy";
+            list.appendChild(empty);
+            return;
+        }
+
+        filtered.forEach(opt => {
+            const item = document.createElement("div");
+            item.className = "ssd-item" + (opt === currentValue ? " ssd-item--active" : "");
+
+            if (q) {
+                const lower = opt.toLowerCase();
+                const idx = lower.indexOf(q);
+                if (idx >= 0) {
+                    item.innerHTML =
+                        _escHtml(opt.slice(0, idx)) +
+                        `<mark>${_escHtml(opt.slice(idx, idx + q.length))}</mark>` +
+                        _escHtml(opt.slice(idx + q.length));
+                } else {
+                    item.textContent = opt;
+                }
+            } else {
+                item.textContent = opt;
+            }
+
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                currentValue = opt;
+                trigger.textContent = _cap(opt);
+                onChange(opt);
+                _closeDropdown();
+                searchInput.value = "";
+                renderList("");
+            });
+
+            list.appendChild(item);
+        });
+    }
+
+    renderList("");
+
+    searchInput.addEventListener("input", () => renderList(searchInput.value));
+
+    panel.appendChild(searchInput);
+    panel.appendChild(list);
+
+    // Mở / đóng panel
+    trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isOpen = panel.style.display !== "none";
+        if (isOpen) {
+            _closeDropdown();
+        } else {
+            if (_openDropdown) _closeDropdown();
+            const rect = trigger.getBoundingClientRect();
+            panel.style.top = (rect.bottom + 4) + "px";
+            panel.style.left = rect.left + "px";
+            panel.style.minWidth = Math.max(rect.width, 160) + "px";
+            panel.style.display = "block";
+            _openDropdown = { wrapper, panel };
+            searchInput.value = "";
+            renderList("");
+            setTimeout(() => {
+                const activeItem = list.querySelector(".ssd-item--active");
+                if (activeItem) activeItem.scrollIntoView({ block: "nearest" });
+                searchInput.focus();
+            }, 30);
+        }
     });
 
-    sel.addEventListener("change", () => onChange(sel.value));
-
-    wrapper.appendChild(name);
-    wrapper.appendChild(sel);
+    wrapper.appendChild(nameEl);
+    wrapper.appendChild(trigger);
+    // Panel gắn vào body để không bị clip bởi overflow của card
+    document.body.appendChild(panel);
     return wrapper;
+}
+
+function _escHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Viết hoa chữ cái đầu tiên của chuỗi */
+function _cap(str) {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 // ── Main render function ──────────────────────────────────────────

@@ -261,19 +261,140 @@ function refreshGallery() {
 // ── Image Preview Logic ──────────────────────────────────────────
 
 const previewModal = document.getElementById("imagePreviewModal");
-const previewImg = document.getElementById("imagePreviewImg");
+const previewImg   = document.getElementById("imagePreviewImg");
 
-if (previewModal) {
-  previewModal.addEventListener("click", () => {
-    previewModal.classList.remove("active");
-  });
+// Zoom state
+let _zoom      = 1;
+let _dragStart = null;   // { x, y, ox, oy } origin khi bắt đầu kéo
+let _offset    = { x: 0, y: 0 };
+
+const ZOOM_MIN  = 0.2;
+const ZOOM_MAX  = 8;
+const ZOOM_STEP = 0.15;
+
+function _applyTransform() {
+  if (!previewImg) return;
+  previewImg.style.transform =
+    `translate(${_offset.x}px, ${_offset.y}px) scale(${_zoom})`;
+  previewImg.style.cursor = _zoom > 1 ? "grab" : "zoom-in";
 }
+
+function _resetZoom() {
+  _zoom   = 1;
+  _offset = { x: 0, y: 0 };
+  _applyTransform();
+}
+
+function _zoomBy(delta, cx, cy) {
+  const prevZoom = _zoom;
+  _zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, _zoom + delta));
+  if (_zoom === prevZoom) return;
+
+  // Zoom về tâm con trỏ / tâm modal
+  if (cx !== undefined && cy !== undefined && previewImg) {
+    const rect = previewImg.getBoundingClientRect();
+    const imgCx = rect.left + rect.width  / 2;
+    const imgCy = rect.top  + rect.height / 2;
+    const dx = cx - imgCx;
+    const dy = cy - imgCy;
+    const ratio = _zoom / prevZoom - 1;
+    _offset.x -= dx * ratio;
+    _offset.y -= dy * ratio;
+  }
+  _applyTransform();
+}
+
+// ── Nút điều khiển zoom ────────────────────────────────────────
+function _buildZoomControls() {
+  const bar = document.createElement("div");
+  bar.className = "preview-zoom-bar";
+  bar.id = "previewZoomBar";
+  bar.innerHTML = `
+    <button class="pzb-btn" id="pzbZoomIn"  title="Zoom in (+)">＋</button>
+    <button class="pzb-btn" id="pzbReset"   title="Reset zoom (0)">↺</button>
+    <button class="pzb-btn" id="pzbZoomOut" title="Zoom out (−)">－</button>
+    <span   class="pzb-label" id="pzbLabel">100%</span>
+  `;
+  previewModal.appendChild(bar);
+
+  document.getElementById("pzbZoomIn") .addEventListener("click", e => { e.stopPropagation(); _zoomBy(+ZOOM_STEP * 2); _updateLabel(); });
+  document.getElementById("pzbZoomOut").addEventListener("click", e => { e.stopPropagation(); _zoomBy(-ZOOM_STEP * 2); _updateLabel(); });
+  document.getElementById("pzbReset")  .addEventListener("click", e => { e.stopPropagation(); _resetZoom(); _updateLabel(); });
+}
+
+function _updateLabel() {
+  const lbl = document.getElementById("pzbLabel");
+  if (lbl) lbl.textContent = Math.round(_zoom * 100) + "%";
+}
+
+// ── Scroll wheel zoom ─────────────────────────────────────────
+if (previewModal) {
+  previewModal.addEventListener("wheel", e => {
+    if (!previewModal.classList.contains("active")) return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+    _zoomBy(delta, e.clientX, e.clientY);
+    _updateLabel();
+  }, { passive: false });
+
+  // ── Drag to pan ───────────────────────────────────────────────
+  previewModal.addEventListener("mousedown", e => {
+    if (e.target === previewModal) { closeImagePreview(); return; }
+    if (_zoom <= 1) return;
+    e.preventDefault();
+    _dragStart = { x: e.clientX, y: e.clientY, ox: _offset.x, oy: _offset.y };
+    previewImg.style.cursor = "grabbing";
+  });
+
+  window.addEventListener("mousemove", e => {
+    if (!_dragStart) return;
+    _offset.x = _dragStart.ox + (e.clientX - _dragStart.x);
+    _offset.y = _dragStart.oy + (e.clientY - _dragStart.y);
+    _applyTransform();
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (!_dragStart) return;
+    _dragStart = null;
+    _applyTransform(); // reset cursor
+  });
+
+  // Click backdrop → đóng (chỉ khi không đang drag)
+  previewModal.addEventListener("click", e => {
+    if (e.target === previewModal) closeImagePreview();
+  });
+
+  // Ngăn click trên ảnh khi không zoom / không kéo kích hoạt đóng modal
+  previewImg && previewImg.addEventListener("click", e => e.stopPropagation());
+
+  _buildZoomControls();
+}
+
+// ── Phím tắt ─────────────────────────────────────────────────
+document.addEventListener("keydown", e => {
+  if (!previewModal || !previewModal.classList.contains("active")) return;
+  if (e.key === "Escape")    { closeImagePreview(); }
+  if (e.key === "0")          { _resetZoom(); _updateLabel(); }
+  if (e.key === "+" || e.key === "=") { _zoomBy(+ZOOM_STEP * 2); _updateLabel(); }
+  if (e.key === "-")          { _zoomBy(-ZOOM_STEP * 2); _updateLabel(); }
+});
 
 /** Mở modal xem ảnh full */
 function openImagePreview(src) {
   if (!previewModal || !previewImg) return;
   previewImg.src = src;
+  previewImg.style.transform = "";
+  _resetZoom();
+  _updateLabel();
   previewModal.classList.add("active");
+}
+
+/** Đóng modal xem ảnh */
+function closeImagePreview() {
+  if (!previewModal) return;
+  previewModal.classList.remove("active");
+  _resetZoom();
+  _updateLabel();
 }
 
 /**
